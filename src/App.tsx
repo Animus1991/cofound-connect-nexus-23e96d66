@@ -9,6 +9,7 @@ import SignupPage from "./pages/SignupPage";
 import DashboardPage from "./pages/DashboardPage";
 import DiscoverPage from "./pages/DiscoverPage";
 import MessagesPage from "./pages/MessagesPage";
+import OpportunitiesPage from "./pages/OpportunitiesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/discover" element={<DiscoverPage />} />
           <Route path="/messages" element={<MessagesPage />} />
+          <Route path="/opportunities" element={<OpportunitiesPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
