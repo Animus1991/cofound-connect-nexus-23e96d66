@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { MobileHeader, MobileBottomNav } from "@/components/MobileNav";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -118,6 +119,7 @@ export default function DiscoverPage() {
 
   return (
     <div className="flex min-h-screen bg-background">
+      <MobileHeader />
       {/* Sidebar */}
       <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 border-r border-border bg-sidebar lg:flex lg:flex-col">
         <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-6">
@@ -170,9 +172,9 @@ export default function DiscoverPage() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 lg:ml-64">
+      <main className="flex-1 lg:ml-64 pt-14 pb-16 lg:pt-0 lg:pb-0">
         {/* Top bar */}
-        <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-xl">
+        <header className="sticky top-14 lg:top-0 z-30 border-b border-border bg-background/80 backdrop-blur-xl">
           <div className="flex h-16 items-center justify-between px-6">
             <div className="flex items-center gap-4">
               <h1 className="font-display text-xl font-bold text-foreground">
@@ -306,6 +308,7 @@ export default function DiscoverPage() {
           </div>
         </div>
       </main>
+      <MobileBottomNav />
     </div>
   );
 }
