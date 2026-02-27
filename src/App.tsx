@@ -10,6 +10,7 @@ import DashboardPage from "./pages/DashboardPage";
 import DiscoverPage from "./pages/DiscoverPage";
 import MessagesPage from "./pages/MessagesPage";
 import OpportunitiesPage from "./pages/OpportunitiesPage";
+import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/discover" element={<DiscoverPage />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/opportunities" element={<OpportunitiesPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

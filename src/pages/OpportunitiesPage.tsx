@@ -1,21 +1,13 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { MobileHeader, MobileBottomNav } from "@/components/MobileNav";
 import {
-  Rocket,
-  Home,
   Search,
-  MessageSquare,
   Briefcase,
   Users,
-  GraduationCap,
-  Bell,
-  Settings,
-  LogOut,
   MapPin,
   Clock,
   DollarSign,
@@ -28,15 +20,6 @@ import {
   Building2,
   Coins,
 } from "lucide-react";
-
-const navItems = [
-  { icon: Home, label: "Dashboard", path: "/dashboard" },
-  { icon: Search, label: "Discover", path: "/discover" },
-  { icon: MessageSquare, label: "Messages", path: "/messages", badge: 3 },
-  { icon: Briefcase, label: "Opportunities", path: "/opportunities" },
-  { icon: Users, label: "My Network", path: "/network" },
-  { icon: GraduationCap, label: "Learning", path: "/learning" },
-];
 
 interface Opportunity {
   id: string;
@@ -214,7 +197,6 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 };
 
 export default function OpportunitiesPage() {
-  const location = useLocation();
   const [activeTab, setActiveTab] = useState("listings");
   const [searchQuery, setSearchQuery] = useState("");
   const [proposals, setProposals] = useState(mockProposals);
@@ -239,338 +221,267 @@ export default function OpportunitiesPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <MobileHeader />
-
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 border-r border-border bg-sidebar lg:flex lg:flex-col">
-        <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-6">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Rocket className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span className="font-display text-lg font-bold text-sidebar-foreground">
-            CoFounderBay
-          </span>
-        </div>
-        <nav className="flex-1 space-y-1 p-4">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                }`}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-                {item.badge && (
-                  <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground">
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="border-t border-sidebar-border p-4 space-y-1">
-          <Link
-            to="/settings"
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
-          >
-            <Settings className="h-4 w-4" />
-            Settings
-          </Link>
-          <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/50">
-            <LogOut className="h-4 w-4" />
-            Log out
-          </button>
-        </div>
-      </aside>
-
-      {/* Main */}
-      <main className="flex-1 lg:ml-64 pt-14 pb-16 lg:pt-0 lg:pb-0">
-        <header className="sticky top-14 lg:top-0 z-30 border-b border-border bg-background/80 backdrop-blur-xl">
-          <div className="flex h-16 items-center justify-between px-6">
-            <h1 className="font-display text-xl font-bold text-foreground">
-              Opportunities
-            </h1>
-            <div className="flex items-center gap-3">
-              <Button variant="hero" size="sm" className="gap-2 hidden sm:flex">
-                <Plus className="h-3.5 w-3.5" />
-                Post Opportunity
-              </Button>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-4 w-4" />
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-accent-foreground">
-                  5
+    <AppLayout
+      title="Opportunities"
+      headerActions={
+        <Button variant="hero" size="sm" className="gap-2 hidden sm:flex">
+          <Plus className="h-3.5 w-3.5" />
+          Post Opportunity
+        </Button>
+      }
+    >
+      <div className="p-4 sm:p-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-6">
+            <TabsTrigger value="listings" className="gap-1.5">
+              <Briefcase className="h-3.5 w-3.5" />
+              Listings
+            </TabsTrigger>
+            <TabsTrigger value="applications" className="gap-1.5">
+              <FileText className="h-3.5 w-3.5" />
+              My Applications
+            </TabsTrigger>
+            <TabsTrigger value="proposals" className="gap-1.5 relative">
+              <Handshake className="h-3.5 w-3.5" />
+              Proposals
+              {proposals.filter((p) => p.status === "pending").length > 0 && (
+                <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-accent-foreground">
+                  {proposals.filter((p) => p.status === "pending").length}
                 </span>
-              </Button>
-              <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
-                <span className="text-xs font-medium text-primary">JD</span>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Listings */}
+          <TabsContent value="listings">
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search roles, skills, companies..."
+                  className="pl-10"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Filter className="h-3.5 w-3.5" />
+                  Filters
+                </Button>
+                <Button variant="outline" size="sm">
+                  Type <ChevronDown className="h-3 w-3 ml-1" />
+                </Button>
+                <Button variant="outline" size="sm">
+                  Stage <ChevronDown className="h-3 w-3 ml-1" />
+                </Button>
               </div>
             </div>
-          </div>
-        </header>
 
-        <div className="p-4 sm:p-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-6">
-              <TabsTrigger value="listings" className="gap-1.5">
-                <Briefcase className="h-3.5 w-3.5" />
-                Listings
-              </TabsTrigger>
-              <TabsTrigger value="applications" className="gap-1.5">
-                <FileText className="h-3.5 w-3.5" />
-                My Applications
-              </TabsTrigger>
-              <TabsTrigger value="proposals" className="gap-1.5 relative">
-                <Handshake className="h-3.5 w-3.5" />
-                Proposals
-                {proposals.filter((p) => p.status === "pending").length > 0 && (
-                  <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-accent-foreground">
-                    {proposals.filter((p) => p.status === "pending").length}
-                  </span>
-                )}
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Listings */}
-            <TabsContent value="listings">
-              <div className="mb-6 flex flex-col gap-4 sm:flex-row">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search roles, skills, companies..."
-                    className="pl-10"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Filter className="h-3.5 w-3.5" />
-                    Filters
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    Type <ChevronDown className="h-3 w-3 ml-1" />
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    Stage <ChevronDown className="h-3 w-3 ml-1" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {filteredOpportunities.map((opp) => {
-                  const config = typeConfig[opp.type];
-                  return (
-                    <div
-                      key={opp.id}
-                      className="group rounded-2xl border border-border/50 bg-card-gradient p-5 sm:p-6 transition-all hover:border-primary/30 hover:shadow-glow"
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                        <div className="flex items-start gap-4">
-                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/20">
-                            <span className="text-sm font-bold text-primary">
-                              {opp.orgInitials}
-                            </span>
-                          </div>
-                          <div>
-                            <h3 className="font-display text-base font-semibold text-foreground">
-                              {opp.title}
-                            </h3>
-                            <div className="mt-1 flex items-center gap-2 flex-wrap">
-                              <span className="text-sm text-muted-foreground">
-                                {opp.orgName}
-                              </span>
-                              <Badge
-                                variant="secondary"
-                                className={`text-[10px] ${config.className}`}
-                              >
-                                <config.icon className="mr-1 h-3 w-3" />
-                                {config.label}
-                              </Badge>
-                              <Badge variant="secondary" className="text-[10px]">
-                                {opp.stage}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                        <span className="text-xs text-muted-foreground shrink-0">
-                          {opp.posted}
-                        </span>
-                      </div>
-
-                      <p className="mt-3 text-sm text-foreground/80 leading-relaxed">
-                        {opp.description}
-                      </p>
-
-                      <div className="mt-3 flex flex-wrap gap-1.5">
-                        {opp.skills.map((skill) => (
-                          <span
-                            key={skill}
-                            className="rounded-md bg-secondary px-2 py-0.5 text-[11px] text-secondary-foreground"
-                          >
-                            {skill}
+            <div className="space-y-4">
+              {filteredOpportunities.map((opp) => {
+                const config = typeConfig[opp.type];
+                return (
+                  <div
+                    key={opp.id}
+                    className="group rounded-2xl border border-border/50 bg-card-gradient p-5 sm:p-6 transition-all hover:border-primary/30 hover:shadow-glow"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/20">
+                          <span className="text-sm font-bold text-primary">
+                            {opp.orgInitials}
                           </span>
-                        ))}
-                      </div>
-
-                      <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {opp.location}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Coins className="h-3 w-3" />
-                          {opp.compensation}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          {opp.applicants} applicants
-                        </span>
-                      </div>
-
-                      <div className="mt-4 flex gap-2">
-                        <Button variant="default" size="sm" className="gap-1.5 text-xs">
-                          Apply Now
-                          <ArrowRight className="h-3 w-3" />
-                        </Button>
-                        <Button variant="outline" size="sm" className="text-xs">
-                          Save
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </TabsContent>
-
-            {/* Applications */}
-            <TabsContent value="applications">
-              <div className="space-y-4">
-                {mockApplications.map((app) => {
-                  const status = statusConfig[app.status];
-                  return (
-                    <div
-                      key={app.id}
-                      className="rounded-2xl border border-border/50 bg-card-gradient p-5 sm:p-6"
-                    >
-                      <div className="flex items-start justify-between">
+                        </div>
                         <div>
                           <h3 className="font-display text-base font-semibold text-foreground">
-                            {app.opportunityTitle}
+                            {opp.title}
                           </h3>
-                          <p className="mt-0.5 text-sm text-muted-foreground">
-                            {app.orgName}
-                          </p>
-                        </div>
-                        <Badge
-                          variant="secondary"
-                          className={`text-[10px] shrink-0 ${status.className}`}
-                        >
-                          {status.label}
-                        </Badge>
-                      </div>
-                      <p className="mt-3 text-sm text-foreground/80">
-                        {app.message}
-                      </p>
-                      <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        Applied {app.appliedDate}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </TabsContent>
-
-            {/* Collaboration Proposals */}
-            <TabsContent value="proposals">
-              <div className="space-y-4">
-                {proposals.map((prop) => {
-                  const status = statusConfig[prop.status];
-                  return (
-                    <div
-                      key={prop.id}
-                      className="rounded-2xl border border-border/50 bg-card-gradient p-5 sm:p-6"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/20">
-                          <span className="text-xs font-semibold text-primary">
-                            {prop.fromInitials}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <span className="text-sm font-medium text-foreground">
-                                {prop.fromName}
-                              </span>
-                              <span className="ml-2 text-xs text-muted-foreground">
-                                {prop.fromRole}
-                              </span>
-                            </div>
-                            <span className="text-[10px] text-muted-foreground">
-                              {prop.date}
+                          <div className="mt-1 flex items-center gap-2 flex-wrap">
+                            <span className="text-sm text-muted-foreground">
+                              {opp.orgName}
                             </span>
-                          </div>
-                          <p className="mt-2 text-sm text-foreground/80 leading-relaxed">
-                            {prop.scope}
-                          </p>
-                          <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {prop.timeframe}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <DollarSign className="h-3 w-3" />
-                              {prop.compensation}
-                            </span>
-                          </div>
-                          {prop.status === "pending" ? (
-                            <div className="mt-3 flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="hero"
-                                className="h-8 gap-1.5 text-xs"
-                                onClick={() => handleAcceptProposal(prop.id)}
-                              >
-                                Accept
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-8 text-xs"
-                                onClick={() => handleDeclineProposal(prop.id)}
-                              >
-                                Decline
-                              </Button>
-                            </div>
-                          ) : (
                             <Badge
                               variant="secondary"
-                              className={`mt-3 ${status.className}`}
+                              className={`text-[10px] ${config.className}`}
                             >
-                              {status.label}
+                              <config.icon className="mr-1 h-3 w-3" />
+                              {config.label}
                             </Badge>
-                          )}
+                            <Badge variant="secondary" className="text-[10px]">
+                              {opp.stage}
+                            </Badge>
+                          </div>
                         </div>
                       </div>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {opp.posted}
+                      </span>
                     </div>
-                  );
-                })}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </main>
 
-      <MobileBottomNav />
-    </div>
+                    <p className="mt-3 text-sm text-foreground/80 leading-relaxed">
+                      {opp.description}
+                    </p>
+
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {opp.skills.map((skill) => (
+                        <span
+                          key={skill}
+                          className="rounded-md bg-secondary px-2 py-0.5 text-[11px] text-secondary-foreground"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {opp.location}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Coins className="h-3 w-3" />
+                        {opp.compensation}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Users className="h-3 w-3" />
+                        {opp.applicants} applicants
+                      </span>
+                    </div>
+
+                    <div className="mt-4 flex gap-2">
+                      <Button variant="default" size="sm" className="gap-1.5 text-xs">
+                        Apply Now
+                        <ArrowRight className="h-3 w-3" />
+                      </Button>
+                      <Button variant="outline" size="sm" className="text-xs">
+                        Save
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </TabsContent>
+
+          {/* Applications */}
+          <TabsContent value="applications">
+            <div className="space-y-4">
+              {mockApplications.map((app) => {
+                const status = statusConfig[app.status];
+                return (
+                  <div
+                    key={app.id}
+                    className="rounded-2xl border border-border/50 bg-card-gradient p-5 sm:p-6"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-display text-base font-semibold text-foreground">
+                          {app.opportunityTitle}
+                        </h3>
+                        <p className="mt-0.5 text-sm text-muted-foreground">
+                          {app.orgName}
+                        </p>
+                      </div>
+                      <Badge
+                        variant="secondary"
+                        className={`text-[10px] shrink-0 ${status.className}`}
+                      >
+                        {status.label}
+                      </Badge>
+                    </div>
+                    <p className="mt-3 text-sm text-foreground/80">
+                      {app.message}
+                    </p>
+                    <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      Applied {app.appliedDate}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </TabsContent>
+
+          {/* Proposals */}
+          <TabsContent value="proposals">
+            <div className="space-y-4">
+              {proposals.map((prop) => {
+                const status = statusConfig[prop.status];
+                return (
+                  <div
+                    key={prop.id}
+                    className="rounded-2xl border border-border/50 bg-card-gradient p-5 sm:p-6"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/20">
+                        <span className="text-xs font-semibold text-primary">
+                          {prop.fromInitials}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="text-sm font-medium text-foreground">
+                              {prop.fromName}
+                            </span>
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              {prop.fromRole}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-muted-foreground">
+                            {prop.date}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-sm text-foreground/80 leading-relaxed">
+                          {prop.scope}
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {prop.timeframe}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <DollarSign className="h-3 w-3" />
+                            {prop.compensation}
+                          </span>
+                        </div>
+                        {prop.status === "pending" ? (
+                          <div className="mt-3 flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="hero"
+                              className="h-8 gap-1.5 text-xs"
+                              onClick={() => handleAcceptProposal(prop.id)}
+                            >
+                              Accept
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 text-xs"
+                              onClick={() => handleDeclineProposal(prop.id)}
+                            >
+                              Decline
+                            </Button>
+                          </div>
+                        ) : (
+                          <Badge
+                            variant="secondary"
+                            className={`mt-3 ${status.className}`}
+                          >
+                            {status.label}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </AppLayout>
   );
 }
