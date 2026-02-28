@@ -187,7 +187,7 @@ export default function MessagesPage() {
                           </AvatarFallback>
                         </Avatar>
                         {convo.online && (
-                          <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-emerald-500" />
+                          <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-primary" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -299,7 +299,7 @@ export default function MessagesPage() {
                     </AvatarFallback>
                   </Avatar>
                   {currentConvo.online && (
-                    <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-emerald-500" />
+                    <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-primary" />
                   )}
                 </div>
                 <div>

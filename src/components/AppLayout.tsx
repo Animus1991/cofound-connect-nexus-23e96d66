@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { MobileHeader, MobileBottomNav } from "@/components/MobileNav";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
   Rocket,
   Home,
@@ -108,6 +109,7 @@ export default function AppLayout({ title, children, headerActions }: AppLayoutP
             </h1>
             <div className="flex items-center gap-3">
               {headerActions}
+              <ThemeToggle />
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-4 w-4" />
                 <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-accent-foreground">
