@@ -109,11 +109,11 @@ export default function SettingsPage() {
     <AppLayout title="Settings">
       <div className="p-6 max-w-4xl">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="account" className="gap-1.5"><User className="h-3.5 w-3.5" /> Account</TabsTrigger>
-            <TabsTrigger value="notifications" className="gap-1.5"><Bell className="h-3.5 w-3.5" /> Notifications</TabsTrigger>
+          <TabsList className="mb-6 flex-wrap h-auto">
+            <TabsTrigger value="account" className="gap-1.5"><User className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Account</span><span className="sm:hidden">Acct</span></TabsTrigger>
+            <TabsTrigger value="notifications" className="gap-1.5"><Bell className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Notifications</span><span className="sm:hidden">Notifs</span></TabsTrigger>
             <TabsTrigger value="privacy" className="gap-1.5"><Shield className="h-3.5 w-3.5" /> Privacy</TabsTrigger>
-            <TabsTrigger value="connections" className="gap-1.5"><Link2 className="h-3.5 w-3.5" /> Connections</TabsTrigger>
+            <TabsTrigger value="connections" className="gap-1.5"><Link2 className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Connections</span><span className="sm:hidden">Links</span></TabsTrigger>
           </TabsList>
 
           {/* Account */}
@@ -195,8 +195,8 @@ export default function SettingsPage() {
                 <CardDescription>Choose how and when you want to be notified.</CardDescription>
               </CardHeader>
               <CardContent>
-                {/* Header row */}
-                <div className="grid grid-cols-[1fr_60px_60px_60px] gap-2 mb-3 px-1">
+              {/* Header row */}
+                <div className="hidden sm:grid grid-cols-[1fr_60px_60px_60px] gap-2 mb-3 px-1">
                   <span />
                   <span className="text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1"><Mail className="h-3 w-3" /> Email</span>
                   <span className="text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1"><Smartphone className="h-3 w-3" /> Push</span>
@@ -204,14 +204,16 @@ export default function SettingsPage() {
                 </div>
                 <div className="space-y-1">
                   {notifications.map((n) => (
-                    <div key={n.id} className="grid grid-cols-[1fr_60px_60px_60px] gap-2 items-center rounded-lg px-1 py-3 hover:bg-secondary/30 transition-colors">
+                    <div key={n.id} className="flex flex-col sm:grid sm:grid-cols-[1fr_60px_60px_60px] gap-2 sm:items-center rounded-lg px-1 py-3 hover:bg-secondary/30 transition-colors">
                       <div>
                         <p className="text-sm font-medium text-foreground">{n.label}</p>
                         <p className="text-xs text-muted-foreground">{n.description}</p>
                       </div>
-                      <div className="flex justify-center"><Switch checked={n.email} onCheckedChange={() => toggleNotification(n.id, "email")} /></div>
-                      <div className="flex justify-center"><Switch checked={n.push} onCheckedChange={() => toggleNotification(n.id, "push")} /></div>
-                      <div className="flex justify-center"><Switch checked={n.inApp} onCheckedChange={() => toggleNotification(n.id, "inApp")} /></div>
+                      <div className="flex gap-4 sm:contents">
+                        <label className="flex items-center gap-1.5 sm:justify-center text-[10px] text-muted-foreground sm:text-[0px]"><Switch checked={n.email} onCheckedChange={() => toggleNotification(n.id, "email")} /><span className="sm:hidden">Email</span></label>
+                        <label className="flex items-center gap-1.5 sm:justify-center text-[10px] text-muted-foreground sm:text-[0px]"><Switch checked={n.push} onCheckedChange={() => toggleNotification(n.id, "push")} /><span className="sm:hidden">Push</span></label>
+                        <label className="flex items-center gap-1.5 sm:justify-center text-[10px] text-muted-foreground sm:text-[0px]"><Switch checked={n.inApp} onCheckedChange={() => toggleNotification(n.id, "inApp")} /><span className="sm:hidden">In-App</span></label>
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -100,12 +100,13 @@ const mockMessages: Record<string, Message[]> = {
 // ── Component ──────────────────────────────────────────────
 export default function MessagesPage() {
   const [activeTab, setActiveTab] = useState("chats");
-  const [selectedConvo, setSelectedConvo] = useState<string>("c1");
+  const [selectedConvo, setSelectedConvo] = useState<string | null>(null);
   const [introRequests, setIntroRequests] = useState(mockIntroRequests);
   const [messageInput, setMessageInput] = useState("");
   const [messages, setMessages] = useState(mockMessages);
   const [searchQuery, setSearchQuery] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [showChat, setShowChat] = useState(false);
 
   const currentConvo = mockConversations.find((c) => c.id === selectedConvo);
   const currentMessages = messages[selectedConvo] || [];
@@ -179,9 +180,9 @@ export default function MessagesPage() {
 
   return (
     <AppLayout title="Messages">
-      <div className="flex h-[calc(100vh-4rem)]">
+      <div className="flex h-[calc(100vh-7.5rem)] lg:h-[calc(100vh-4rem)]">
         {/* Left panel */}
-        <div className="w-full max-w-sm border-r border-border flex flex-col">
+        <div className={`w-full lg:max-w-sm border-r border-border flex flex-col ${showChat ? "hidden lg:flex" : "flex"}`}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
             <div className="p-4 pb-0">
               <TabsList className="w-full">
@@ -211,7 +212,7 @@ export default function MessagesPage() {
                   {filteredConversations.map((convo) => (
                     <button
                       key={convo.id}
-                      onClick={() => setSelectedConvo(convo.id)}
+                      onClick={() => { setSelectedConvo(convo.id); setShowChat(true); }}
                       className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors ${
                         selectedConvo === convo.id ? "bg-primary/10 border border-primary/20" : "hover:bg-secondary/50 border border-transparent"
                       }`}
@@ -292,11 +293,14 @@ export default function MessagesPage() {
         </div>
 
         {/* Right panel — chat */}
-        <div className="flex-1 flex flex-col">
+        <div className={`flex-1 flex flex-col ${showChat ? "flex" : "hidden lg:flex"}`}>
           {currentConvo ? (
             <>
               {/* Header */}
-              <div className="flex items-center gap-3 border-b border-border px-6 py-4">
+              <div className="flex items-center gap-3 border-b border-border px-4 lg:px-6 py-4">
+                <Button variant="ghost" size="icon" className="lg:hidden shrink-0" onClick={() => setShowChat(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
                 <div className="relative">
                   <Avatar className="h-10 w-10">
                     <AvatarFallback className="bg-primary/20 text-primary text-xs font-semibold">{currentConvo.initials}</AvatarFallback>
