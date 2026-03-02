@@ -13,6 +13,8 @@ import MessagesPage from "./pages/MessagesPage";
 import OpportunitiesPage from "./pages/OpportunitiesPage";
 import NetworkPage from "./pages/NetworkPage";
 import ProfilePage from "./pages/ProfilePage";
+import LearningPage from "./pages/LearningPage";
+import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +36,8 @@ const App = () => (
           <Route path="/network" element={<NetworkPage />} />
           <Route path="/opportunities" element={<OpportunitiesPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/learning" element={<LearningPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         </BrowserRouter>
