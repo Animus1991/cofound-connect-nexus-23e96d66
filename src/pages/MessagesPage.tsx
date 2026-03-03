@@ -297,7 +297,7 @@ export default function MessagesPage() {
           {currentConvo ? (
             <>
               {/* Header */}
-              <div className="flex items-center gap-3 border-b border-border px-4 lg:px-6 py-4">
+              <div className="flex items-center gap-3 border-b border-border px-4 lg:px-6 py-4 shrink-0">
                 <Button variant="ghost" size="icon" className="lg:hidden shrink-0" onClick={() => setShowChat(false)}>
                   <X className="h-4 w-4" />
                 </Button>

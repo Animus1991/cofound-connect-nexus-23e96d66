@@ -15,6 +15,7 @@ import NetworkPage from "./pages/NetworkPage";
 import ProfilePage from "./pages/ProfilePage";
 import LearningPage from "./pages/LearningPage";
 import SettingsPage from "./pages/SettingsPage";
+import OnboardingPage from "./pages/OnboardingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/discover" element={<DiscoverPage />} />
           <Route path="/messages" element={<MessagesPage />} />
