@@ -115,7 +115,7 @@ export default function DashboardPage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="rounded-xl border border-border/50 bg-card-gradient p-4 sm:p-5"
+              className="rounded-xl border border-border/50 bg-card-gradient p-4 sm:p-5 hover-lift"
             >
               <div className="flex items-center justify-between">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
@@ -178,7 +178,7 @@ export default function DashboardPage() {
               {recentMatches.map((match) => (
                 <div
                   key={match.name}
-                  className="flex items-center justify-between rounded-lg bg-secondary/30 p-3 transition-colors hover:bg-secondary/50"
+                  className="flex items-center justify-between rounded-lg bg-secondary/30 p-3 transition-all duration-200 hover:bg-secondary/50 hover:scale-[1.01]"
                 >
                   <div className="flex items-center gap-3">
                     <div className="relative">
@@ -256,7 +256,7 @@ export default function DashboardPage() {
             {upcomingEvents.map((event) => (
               <div
                 key={event.title}
-                className="rounded-xl border border-border/30 bg-secondary/20 p-4 hover:border-primary/30 transition-colors"
+                className="rounded-xl border border-border/30 bg-secondary/20 p-4 interactive-card"
               >
                 <div className="flex items-center gap-2 mb-2">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/20">

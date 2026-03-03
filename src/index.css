@@ -142,4 +142,29 @@
   .shadow-card {
     box-shadow: var(--shadow-card);
   }
+
+  /* Micro-interaction utilities */
+  .hover-lift {
+    @apply transition-all duration-300;
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-glow);
+  }
+
+  .hover-glow {
+    @apply transition-all duration-300;
+  }
+  .hover-glow:hover {
+    box-shadow: var(--shadow-glow);
+    border-color: hsl(var(--primary) / 0.3);
+  }
+
+  .interactive-card {
+    @apply transition-all duration-300 hover:border-primary/30;
+  }
+  .interactive-card:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-glow);
+  }
 }
