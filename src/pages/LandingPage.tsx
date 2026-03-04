@@ -1,4 +1,4 @@
-import { motion, type Easing } from "framer-motion";
+import { motion, type Easing, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import {
@@ -12,7 +12,10 @@ import {
   Zap,
   Target,
   Lightbulb,
+  Moon,
+  Sun,
 } from "lucide-react";
+import { useTheme } from "@/components/ThemeProvider";
 import heroBg from "@/assets/hero-bg.jpg";
 
 const fadeUp = {
@@ -71,6 +74,8 @@ const roles = [
 ];
 
 export default function LandingPage() {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <div className="min-h-screen bg-background">
       {/* Nav */}
@@ -96,6 +101,39 @@ export default function LandingPage() {
             </a>
           </div>
           <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="relative h-9 w-9 overflow-hidden"
+              aria-label="Toggle theme"
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                {theme === "dark" ? (
+                  <motion.div
+                    key="sun"
+                    initial={{ rotate: -90, scale: 0, opacity: 0 }}
+                    animate={{ rotate: 0, scale: 1, opacity: 1 }}
+                    exit={{ rotate: 90, scale: 0, opacity: 0 }}
+                    transition={{ duration: 0.25, ease: "easeOut" }}
+                    className="absolute inset-0 flex items-center justify-center"
+                  >
+                    <Sun className="h-4 w-4 text-accent" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="moon"
+                    initial={{ rotate: 90, scale: 0, opacity: 0 }}
+                    animate={{ rotate: 0, scale: 1, opacity: 1 }}
+                    exit={{ rotate: -90, scale: 0, opacity: 0 }}
+                    transition={{ duration: 0.25, ease: "easeOut" }}
+                    className="absolute inset-0 flex items-center justify-center"
+                  >
+                    <Moon className="h-4 w-4 text-primary" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Button>
             <Link to="/login">
               <Button variant="ghost" size="sm">
                 Log in

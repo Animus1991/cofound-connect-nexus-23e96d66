@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
+import { StatSkeleton, CardSkeleton, ListItemSkeleton } from "@/components/SkeletonLoaders";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -62,7 +63,13 @@ const todoItems = [
 
 export default function DashboardPage() {
   const [savedMatches, setSavedMatches] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const completedTodos = todoItems.filter((t) => t.done).length;
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1200);
+    return () => clearTimeout(timer);
+  }, []);
 
   const toggleSave = (name: string) => {
     setSavedMatches((prev) =>
@@ -73,6 +80,30 @@ export default function DashboardPage() {
   return (
     <AppLayout title="Dashboard">
       <div className="p-4 sm:p-6 space-y-6">
+        {isLoading ? (
+          <>
+            {/* Skeleton for Welcome Banner */}
+            <CardSkeleton />
+            {/* Skeleton for Stats Grid */}
+            <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <StatSkeleton key={i} />
+              ))}
+            </div>
+            {/* Skeleton for Checklist */}
+            <CardSkeleton />
+            {/* Skeleton for Matches + Activity */}
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div className="rounded-2xl border border-border/50 bg-card-gradient p-6">
+                <ListItemSkeleton count={4} />
+              </div>
+              <div className="rounded-2xl border border-border/50 bg-card-gradient p-6">
+                <ListItemSkeleton count={5} />
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
         {/* Welcome Banner */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -282,6 +313,8 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
+        </>
+        )}
       </div>
     </AppLayout>
   );
