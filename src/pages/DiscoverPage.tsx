@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,7 @@ import {
   X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
+import { ProfileCardSkeleton } from "@/components/SkeletonLoaders";
 const mockProfiles = [
   {
     id: 1, name: "Alex Chen", role: "Founder",
@@ -87,7 +87,12 @@ export default function DiscoverPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [savedProfiles, setSavedProfiles] = useState<number[]>([]);
   const [introSent, setIntroSent] = useState<number[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1000);
+    return () => clearTimeout(timer);
+  }, []);
   const filtered = mockProfiles.filter((p) => {
     const matchesSearch =
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -195,117 +200,126 @@ export default function DiscoverPage() {
           </div>
         </div>
 
-        {/* Results */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={viewMode + roleFilter + stageFilter}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className={
-              viewMode === "grid"
-                ? "grid gap-4 md:grid-cols-2 xl:grid-cols-3"
-                : "space-y-3"
-            }
-          >
-            {filtered.map((profile) => (
-              <motion.div
-                key={profile.id}
-                layout
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`group rounded-2xl border border-border/50 bg-card-gradient transition-all duration-300 hover:border-primary/30 hover:shadow-glow ${
-                  viewMode === "list" ? "flex items-center gap-4 p-4" : "p-6"
-                }`}
-              >
-                <div className={viewMode === "list" ? "flex items-center gap-3 flex-1 min-w-0" : ""}>
-                  <div className={viewMode === "list" ? "flex items-center gap-3 flex-1" : "flex items-start justify-between"}>
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/20">
-                        <span className="text-sm font-semibold text-primary">
-                          {profile.name.split(" ").map((n) => n[0]).join("")}
-                        </span>
-                      </div>
-                      <div>
-                        <h3 className="font-display font-semibold text-foreground">
-                          {profile.name}
-                        </h3>
-                        <Badge variant="secondary" className={`text-[10px] ${roleColor[profile.role] || ""}`}>
-                          {profile.role}
-                        </Badge>
-                      </div>
-                    </div>
-                    {viewMode === "grid" && (
-                      <div className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1">
-                        <Star className="h-3 w-3 text-primary" />
-                        <span className="text-xs font-semibold text-primary">{profile.matchScore}%</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {viewMode === "list" && (
-                    <p className="text-sm text-muted-foreground truncate flex-1">{profile.headline}</p>
-                  )}
-                </div>
-
-                {viewMode === "grid" && (
-                  <>
-                    <p className="mt-3 text-sm text-muted-foreground">{profile.headline}</p>
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {profile.skills.map((skill) => (
-                        <span key={skill} className="rounded-md bg-secondary px-2 py-0.5 text-[11px] text-secondary-foreground">
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{profile.location}</span>
-                      <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{profile.availability}</span>
-                    </div>
-                    <div className="mt-3 rounded-lg bg-secondary/50 px-3 py-2 text-xs">
-                      <span className="text-muted-foreground">Looking for: </span>
-                      <span className="font-medium text-foreground">{profile.lookingFor}</span>
-                    </div>
-                  </>
-                )}
-
-                <div className={`flex gap-2 ${viewMode === "grid" ? "mt-4" : "shrink-0"}`}>
-                  {introSent.includes(profile.id) ? (
-                    <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled>
-                      <MessageSquare className="h-3 w-3" /> Sent
-                    </Button>
-                  ) : (
-                    <Button variant="default" size="sm" className="text-xs gap-1.5" onClick={() => sendIntro(profile.id)}>
-                      <MessageSquare className="h-3 w-3" /> Request Intro
-                    </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => toggleSave(profile.id)}
-                  >
-                    <Bookmark className={`h-4 w-4 ${savedProfiles.includes(profile.id) ? "fill-accent text-accent" : ""}`} />
-                  </Button>
-                  {viewMode === "list" && (
-                    <div className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1">
-                      <span className="text-xs font-semibold text-primary">{profile.matchScore}%</span>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
+        {isLoading ? (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <ProfileCardSkeleton key={i} />
             ))}
-          </motion.div>
-        </AnimatePresence>
-
-        {filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Users className="h-12 w-12 text-muted-foreground/30 mb-4" />
-            <p className="text-lg font-medium text-foreground">No matches found</p>
-            <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters or search query</p>
-            <Button variant="outline" size="sm" className="mt-4" onClick={() => { setSearchQuery(""); setRoleFilter("All Roles"); setStageFilter("All Stages"); }}>
-              Clear Filters
-            </Button>
           </div>
+        ) : (
+          <>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={viewMode + roleFilter + stageFilter}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className={
+                  viewMode === "grid"
+                    ? "grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+                    : "space-y-3"
+                }
+              >
+                {filtered.map((profile) => (
+                  <motion.div
+                    key={profile.id}
+                    layout
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`group rounded-2xl border border-border/50 bg-card-gradient transition-all duration-300 hover:border-primary/30 hover:shadow-glow ${
+                      viewMode === "list" ? "flex items-center gap-4 p-4" : "p-6"
+                    }`}
+                  >
+                    <div className={viewMode === "list" ? "flex items-center gap-3 flex-1 min-w-0" : ""}>
+                      <div className={viewMode === "list" ? "flex items-center gap-3 flex-1" : "flex items-start justify-between"}>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/20">
+                            <span className="text-sm font-semibold text-primary">
+                              {profile.name.split(" ").map((n) => n[0]).join("")}
+                            </span>
+                          </div>
+                          <div>
+                            <h3 className="font-display font-semibold text-foreground">
+                              {profile.name}
+                            </h3>
+                            <Badge variant="secondary" className={`text-[10px] ${roleColor[profile.role] || ""}`}>
+                              {profile.role}
+                            </Badge>
+                          </div>
+                        </div>
+                        {viewMode === "grid" && (
+                          <div className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1">
+                            <Star className="h-3 w-3 text-primary" />
+                            <span className="text-xs font-semibold text-primary">{profile.matchScore}%</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {viewMode === "list" && (
+                        <p className="text-sm text-muted-foreground truncate flex-1">{profile.headline}</p>
+                      )}
+                    </div>
+
+                    {viewMode === "grid" && (
+                      <>
+                        <p className="mt-3 text-sm text-muted-foreground">{profile.headline}</p>
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {profile.skills.map((skill) => (
+                            <span key={skill} className="rounded-md bg-secondary px-2 py-0.5 text-[11px] text-secondary-foreground">
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{profile.location}</span>
+                          <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{profile.availability}</span>
+                        </div>
+                        <div className="mt-3 rounded-lg bg-secondary/50 px-3 py-2 text-xs">
+                          <span className="text-muted-foreground">Looking for: </span>
+                          <span className="font-medium text-foreground">{profile.lookingFor}</span>
+                        </div>
+                      </>
+                    )}
+
+                    <div className={`flex gap-2 ${viewMode === "grid" ? "mt-4" : "shrink-0"}`}>
+                      {introSent.includes(profile.id) ? (
+                        <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled>
+                          <MessageSquare className="h-3 w-3" /> Sent
+                        </Button>
+                      ) : (
+                        <Button variant="default" size="sm" className="text-xs gap-1.5" onClick={() => sendIntro(profile.id)}>
+                          <MessageSquare className="h-3 w-3" /> Request Intro
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => toggleSave(profile.id)}
+                      >
+                        <Bookmark className={`h-4 w-4 ${savedProfiles.includes(profile.id) ? "fill-accent text-accent" : ""}`} />
+                      </Button>
+                      {viewMode === "list" && (
+                        <div className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1">
+                          <span className="text-xs font-semibold text-primary">{profile.matchScore}%</span>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </AnimatePresence>
+
+            {filtered.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Users className="h-12 w-12 text-muted-foreground/30 mb-4" />
+                <p className="text-lg font-medium text-foreground">No matches found</p>
+                <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters or search query</p>
+                <Button variant="outline" size="sm" className="mt-4" onClick={() => { setSearchQuery(""); setRoleFilter("All Roles"); setStageFilter("All Stages"); }}>
+                  Clear Filters
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </AppLayout>
