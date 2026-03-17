@@ -18,6 +18,11 @@ import ProfilePage from "./pages/ProfilePage";
 import LearningPage from "./pages/LearningPage";
 import SettingsPage from "./pages/SettingsPage";
 import OnboardingPage from "./pages/OnboardingPage";
+import MentorsPage from "./pages/MentorsPage";
+import CommunitiesPage from "./pages/CommunitiesPage";
+import CommunityDetailPage from "./pages/CommunityDetailPage";
+import MilestonesPage from "./pages/MilestonesPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +44,11 @@ function AnimatedRoutes() {
         <Route path="/profile" element={<PageTransition><ProfilePage /></PageTransition>} />
         <Route path="/learning" element={<PageTransition><LearningPage /></PageTransition>} />
         <Route path="/settings" element={<PageTransition><SettingsPage /></PageTransition>} />
+        <Route path="/mentors" element={<PageTransition><MentorsPage /></PageTransition>} />
+        <Route path="/communities" element={<PageTransition><CommunitiesPage /></PageTransition>} />
+        <Route path="/communities/:id" element={<PageTransition><CommunityDetailPage /></PageTransition>} />
+        <Route path="/milestones" element={<PageTransition><MilestonesPage /></PageTransition>} />
+        <Route path="/admin" element={<PageTransition><AdminDashboardPage /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>
