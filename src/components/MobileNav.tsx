@@ -12,6 +12,8 @@ import {
   GraduationCap,
   Menu,
   X,
+  Target,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -20,17 +22,18 @@ const navItems = [
   { icon: Home, label: "Dashboard", path: "/dashboard" },
   { icon: Search, label: "Discover", path: "/discover" },
   { icon: MessageSquare, label: "Messages", path: "/messages", badge: 3 },
+  { icon: GraduationCap, label: "Mentors", path: "/mentors" },
+  { icon: Users, label: "Communities", path: "/communities" },
   { icon: Briefcase, label: "Opportunities", path: "/opportunities" },
-  { icon: Users, label: "My Network", path: "/network" },
-  { icon: GraduationCap, label: "Learning", path: "/learning" },
+  { icon: Target, label: "Milestones", path: "/milestones" },
 ];
 
 const bottomTabs = [
   { icon: Home, label: "Home", path: "/dashboard" },
   { icon: Search, label: "Discover", path: "/discover" },
   { icon: MessageSquare, label: "Messages", path: "/messages", badge: 3 },
-  { icon: Briefcase, label: "Jobs", path: "/opportunities" },
-  { icon: Users, label: "Network", path: "/network" },
+  { icon: Users, label: "Community", path: "/communities" },
+  { icon: Target, label: "Milestones", path: "/milestones" },
 ];
 
 export function MobileHeader() {

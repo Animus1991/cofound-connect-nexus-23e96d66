@@ -14,15 +14,18 @@ import {
   Bell,
   Settings,
   LogOut,
+  Target,
+  Shield,
 } from "lucide-react";
 
 const navItems = [
   { icon: Home, label: "Dashboard", path: "/dashboard" },
   { icon: Search, label: "Discover", path: "/discover" },
   { icon: MessageSquare, label: "Messages", path: "/messages", badge: 3 },
+  { icon: GraduationCap, label: "Mentors", path: "/mentors" },
+  { icon: Users, label: "Communities", path: "/communities" },
   { icon: Briefcase, label: "Opportunities", path: "/opportunities" },
-  { icon: Users, label: "My Network", path: "/network" },
-  { icon: GraduationCap, label: "Learning", path: "/learning" },
+  { icon: Target, label: "Milestones", path: "/milestones" },
 ];
 
 interface AppLayoutProps {
@@ -85,6 +88,17 @@ export default function AppLayout({ title, children, headerActions }: AppLayoutP
               <span className="text-[8px] font-bold text-primary">JD</span>
             </div>
             Profile
+          </Link>
+          <Link
+            to="/admin"
+            className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+              location.pathname === "/admin"
+                ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
+            }`}
+          >
+            <Shield className="h-4 w-4" />
+            Admin
           </Link>
           <Link
             to="/settings"
