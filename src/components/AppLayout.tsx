@@ -123,6 +123,7 @@ export default function AppLayout({ title, children, headerActions }: AppLayoutP
               {title}
             </h1>
             <div className="flex items-center gap-3">
+              <GlobalSearch />
               {headerActions}
               <ThemeToggle />
               <Button variant="ghost" size="icon" className="relative">
