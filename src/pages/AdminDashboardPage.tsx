@@ -12,6 +12,26 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+} from "recharts";
+import {
   Users,
   TrendingUp,
   MessageSquare,
@@ -30,6 +50,62 @@ import {
   Plus,
 } from "lucide-react";
 import { motion } from "framer-motion";
+
+// Chart data
+const userGrowthData = [
+  { month: "Sep", users: 420, active: 210 },
+  { month: "Oct", users: 680, active: 390 },
+  { month: "Nov", users: 1020, active: 580 },
+  { month: "Dec", users: 1340, active: 740 },
+  { month: "Jan", users: 1890, active: 1050 },
+  { month: "Feb", users: 2380, active: 1310 },
+  { month: "Mar", users: 2847, active: 1523 },
+];
+
+const matchRatesData = [
+  { week: "W1", sent: 62, accepted: 38, declined: 14 },
+  { week: "W2", sent: 78, accepted: 51, declined: 18 },
+  { week: "W3", sent: 55, accepted: 34, declined: 12 },
+  { week: "W4", sent: 89, accepted: 58, declined: 21 },
+  { week: "W5", sent: 94, accepted: 67, declined: 15 },
+  { week: "W6", sent: 71, accepted: 49, declined: 13 },
+  { week: "W7", sent: 86, accepted: 61, declined: 17 },
+];
+
+const communityEngagementData = [
+  { month: "Sep", posts: 45, joins: 120, replies: 180 },
+  { month: "Oct", posts: 78, joins: 210, replies: 320 },
+  { month: "Nov", posts: 112, joins: 340, replies: 480 },
+  { month: "Dec", posts: 140, joins: 420, replies: 560 },
+  { month: "Jan", posts: 185, joins: 580, replies: 710 },
+  { month: "Feb", posts: 210, joins: 720, replies: 830 },
+  { month: "Mar", posts: 248, joins: 850, replies: 940 },
+];
+
+const roleDistributionData = [
+  { name: "Founders", value: 1120, color: "hsl(var(--primary))" },
+  { name: "Co-Founders", value: 780, color: "hsl(var(--accent))" },
+  { name: "Mentors", value: 420, color: "hsl(142 71% 45%)" },
+  { name: "Advisors", value: 310, color: "hsl(38 92% 50%)" },
+  { name: "Other", value: 217, color: "hsl(var(--muted-foreground))" },
+];
+
+const userGrowthConfig = {
+  users: { label: "Total Users", color: "hsl(var(--primary))" },
+  active: { label: "Active Users", color: "hsl(var(--accent))" },
+};
+
+const matchRatesConfig = {
+  sent: { label: "Sent", color: "hsl(var(--primary))" },
+  accepted: { label: "Accepted", color: "hsl(142 71% 45%)" },
+  declined: { label: "Declined", color: "hsl(var(--destructive))" },
+};
+
+const communityConfig = {
+  posts: { label: "Posts", color: "hsl(var(--primary))" },
+  joins: { label: "Joins", color: "hsl(var(--accent))" },
+  replies: { label: "Replies", color: "hsl(142 71% 45%)" },
+};
 
 const platformStats = [
   { label: "Total Users", value: "2,847", change: "+127 this month", icon: Users, trend: "up" },
@@ -117,6 +193,7 @@ export default function AdminDashboardPage() {
         {/* Overview */}
         {activeSection === "overview" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+            {/* Stats Cards */}
             <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
               {platformStats.map((stat, i) => (
                 <motion.div key={stat.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
@@ -134,6 +211,126 @@ export default function AdminDashboardPage() {
               ))}
             </div>
 
+            {/* Charts Row 1: User Growth + Role Distribution */}
+            <div className="grid gap-6 lg:grid-cols-3">
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="lg:col-span-2 rounded-2xl border border-border/50 bg-card-gradient p-6"
+              >
+                <h3 className="font-display text-sm font-semibold text-foreground mb-1">User Growth</h3>
+                <p className="text-xs text-muted-foreground mb-4">Total vs active users over the last 7 months</p>
+                <ChartContainer config={userGrowthConfig} className="h-[240px] w-full">
+                  <AreaChart data={userGrowthData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />
+                    <XAxis dataKey="month" tick={{ fontSize: 11 }} className="text-muted-foreground" />
+                    <YAxis tick={{ fontSize: 11 }} className="text-muted-foreground" />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <defs>
+                      <linearGradient id="gradUsers" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.02} />
+                      </linearGradient>
+                      <linearGradient id="gradActive" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(var(--accent))" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="hsl(var(--accent))" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <Area type="monotone" dataKey="users" stroke="hsl(var(--primary))" fill="url(#gradUsers)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="active" stroke="hsl(var(--accent))" fill="url(#gradActive)" strokeWidth={2} />
+                  </AreaChart>
+                </ChartContainer>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="rounded-2xl border border-border/50 bg-card-gradient p-6"
+              >
+                <h3 className="font-display text-sm font-semibold text-foreground mb-1">Role Distribution</h3>
+                <p className="text-xs text-muted-foreground mb-4">Users by primary role</p>
+                <div className="h-[180px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={roleDistributionData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={45}
+                        outerRadius={75}
+                        paddingAngle={3}
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        {roleDistributionData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="space-y-1.5 mt-2">
+                  {roleDistributionData.map(item => (
+                    <div key={item.name} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
+                        <span className="text-muted-foreground">{item.name}</span>
+                      </div>
+                      <span className="font-medium text-foreground tabular-nums">{item.value.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Charts Row 2: Match Rates + Community Engagement */}
+            <div className="grid gap-6 lg:grid-cols-2">
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                className="rounded-2xl border border-border/50 bg-card-gradient p-6"
+              >
+                <h3 className="font-display text-sm font-semibold text-foreground mb-1">Match Rates</h3>
+                <p className="text-xs text-muted-foreground mb-4">Weekly match requests: sent, accepted, declined</p>
+                <ChartContainer config={matchRatesConfig} className="h-[220px] w-full">
+                  <BarChart data={matchRatesData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />
+                    <XAxis dataKey="week" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="sent" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="accepted" fill="hsl(142 71% 45%)" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="declined" fill="hsl(var(--destructive))" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ChartContainer>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="rounded-2xl border border-border/50 bg-card-gradient p-6"
+              >
+                <h3 className="font-display text-sm font-semibold text-foreground mb-1">Community Engagement</h3>
+                <p className="text-xs text-muted-foreground mb-4">Posts, joins, and replies over the last 7 months</p>
+                <ChartContainer config={communityConfig} className="h-[220px] w-full">
+                  <LineChart data={communityEngagementData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />
+                    <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Line type="monotone" dataKey="posts" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
+                    <Line type="monotone" dataKey="joins" stroke="hsl(var(--accent))" strokeWidth={2} dot={{ r: 3 }} />
+                    <Line type="monotone" dataKey="replies" stroke="hsl(142 71% 45%)" strokeWidth={2} dot={{ r: 3 }} />
+                  </LineChart>
+                </ChartContainer>
+              </motion.div>
+            </div>
+
+            {/* Health Metrics */}
             <div className="rounded-2xl border border-border/50 bg-card-gradient p-6">
               <h3 className="font-display text-sm font-semibold text-foreground mb-4">Platform Health Metrics</h3>
               <div className="space-y-4">
@@ -141,7 +338,7 @@ export default function AdminDashboardPage() {
                   <div key={metric.label}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm text-foreground">{metric.label}</span>
-                      <span className="text-xs text-muted-foreground">{metric.value.toLocaleString()} / {metric.total.toLocaleString()} ({metric.pct}%)</span>
+                      <span className="text-xs text-muted-foreground tabular-nums">{metric.value.toLocaleString()} / {metric.total.toLocaleString()} ({metric.pct}%)</span>
                     </div>
                     <Progress value={metric.pct} className="h-2" />
                   </div>
