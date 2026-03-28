@@ -169,22 +169,24 @@ export default function AdminDashboardPage() {
     { key: "taxonomies" as const, label: "Taxonomies", icon: Tag },
   ];
 
+  const stagger = (i: number) => ({ delay: i * 0.06 });
+
   return (
     <AppLayout title="Admin Dashboard">
-      <div className="p-4 sm:p-6 space-y-6">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto">
         {/* Section Nav */}
-        <div className="flex gap-1 overflow-x-auto border-b border-border pb-px">
+        <div className="flex gap-1 overflow-x-auto border-b border-border/50 pb-px">
           {sections.map(s => (
             <button
               key={s.key}
               onClick={() => setActiveSection(s.key)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-all duration-200 border-b-2 -mb-px ${
                 activeSection === s.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
               <s.icon className="h-4 w-4" /> {s.label}
               {s.key === "moderation" && (
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">{moderationQueue.length}</span>
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground tabular-nums">{moderationQueue.length}</span>
               )}
             </button>
           ))}
@@ -194,32 +196,36 @@ export default function AdminDashboardPage() {
         {activeSection === "overview" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
             {/* Stats Cards */}
-            <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
               {platformStats.map((stat, i) => (
-                <motion.div key={stat.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                  className="rounded-xl border border-border/50 bg-card-gradient p-4 hover-lift"
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, y: 12, filter: "blur(4px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  transition={{ ...stagger(i), duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  className="group rounded-xl border border-border/50 bg-card p-4 sm:p-5 transition-all duration-300 hover:border-primary/20 hover:shadow-[0_2px_16px_hsl(var(--primary)/0.08)] active:scale-[0.98]"
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 transition-colors group-hover:bg-primary/15">
                       <stat.icon className="h-4 w-4 text-primary" />
                     </div>
-                    <Badge variant="secondary" className="text-[10px] bg-primary/10 text-primary">{stat.change}</Badge>
+                    <span className="text-[10px] font-medium text-primary bg-primary/8 px-2 py-0.5 rounded-full">{stat.change}</span>
                   </div>
-                  <p className="font-display text-2xl font-bold text-foreground">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground">{stat.label}</p>
+                  <p className="font-display text-2xl font-bold text-foreground tabular-nums">{stat.value}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
                 </motion.div>
               ))}
             </div>
 
-            {/* Charts Row 1: User Growth + Role Distribution */}
+            {/* Charts Row 1 */}
             <div className="grid gap-6 lg:grid-cols-3">
               <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-                className="lg:col-span-2 rounded-2xl border border-border/50 bg-card-gradient p-6"
+                initial={{ opacity: 0, y: 16, filter: "blur(4px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                transition={{ ...stagger(4), duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="lg:col-span-2 rounded-2xl border border-border/50 bg-card p-6"
               >
-                <h3 className="font-display text-sm font-semibold text-foreground mb-1">User Growth</h3>
+                <h3 className="font-display text-base font-semibold text-foreground mb-1">User Growth</h3>
                 <p className="text-xs text-muted-foreground mb-4">Total vs active users over the last 7 months</p>
                 <ChartContainer config={userGrowthConfig} className="h-[240px] w-full">
                   <AreaChart data={userGrowthData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
@@ -244,26 +250,17 @@ export default function AdminDashboardPage() {
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="rounded-2xl border border-border/50 bg-card-gradient p-6"
+                initial={{ opacity: 0, y: 16, filter: "blur(4px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                transition={{ ...stagger(5), duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="rounded-2xl border border-border/50 bg-card p-6"
               >
-                <h3 className="font-display text-sm font-semibold text-foreground mb-1">Role Distribution</h3>
+                <h3 className="font-display text-base font-semibold text-foreground mb-1">Role Distribution</h3>
                 <p className="text-xs text-muted-foreground mb-4">Users by primary role</p>
                 <div className="h-[180px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie
-                        data={roleDistributionData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={45}
-                        outerRadius={75}
-                        paddingAngle={3}
-                        dataKey="value"
-                        stroke="none"
-                      >
+                      <Pie data={roleDistributionData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3} dataKey="value" stroke="none">
                         {roleDistributionData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
@@ -285,15 +282,15 @@ export default function AdminDashboardPage() {
               </motion.div>
             </div>
 
-            {/* Charts Row 2: Match Rates + Community Engagement */}
+            {/* Charts Row 2 */}
             <div className="grid gap-6 lg:grid-cols-2">
               <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25 }}
-                className="rounded-2xl border border-border/50 bg-card-gradient p-6"
+                initial={{ opacity: 0, y: 16, filter: "blur(4px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                transition={{ ...stagger(6), duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="rounded-2xl border border-border/50 bg-card p-6"
               >
-                <h3 className="font-display text-sm font-semibold text-foreground mb-1">Match Rates</h3>
+                <h3 className="font-display text-base font-semibold text-foreground mb-1">Match Rates</h3>
                 <p className="text-xs text-muted-foreground mb-4">Weekly match requests: sent, accepted, declined</p>
                 <ChartContainer config={matchRatesConfig} className="h-[220px] w-full">
                   <BarChart data={matchRatesData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
@@ -309,12 +306,12 @@ export default function AdminDashboardPage() {
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="rounded-2xl border border-border/50 bg-card-gradient p-6"
+                initial={{ opacity: 0, y: 16, filter: "blur(4px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                transition={{ ...stagger(7), duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="rounded-2xl border border-border/50 bg-card p-6"
               >
-                <h3 className="font-display text-sm font-semibold text-foreground mb-1">Community Engagement</h3>
+                <h3 className="font-display text-base font-semibold text-foreground mb-1">Community Engagement</h3>
                 <p className="text-xs text-muted-foreground mb-4">Posts, joins, and replies over the last 7 months</p>
                 <ChartContainer config={communityConfig} className="h-[220px] w-full">
                   <LineChart data={communityEngagementData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
@@ -331,8 +328,14 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Health Metrics */}
-            <div className="rounded-2xl border border-border/50 bg-card-gradient p-6">
-              <h3 className="font-display text-sm font-semibold text-foreground mb-4">Platform Health Metrics</h3>
+            <motion.div
+              initial={{ opacity: 0, y: 16, filter: "blur(4px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ ...stagger(8), duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="rounded-2xl border border-border/50 bg-card p-6"
+            >
+              <h3 className="font-display text-base font-semibold text-foreground mb-1">Platform Health Metrics</h3>
+              <p className="text-xs text-muted-foreground mb-4">Key performance indicators across the platform</p>
               <div className="space-y-4">
                 {detailedMetrics.map(metric => (
                   <div key={metric.label}>
@@ -344,7 +347,7 @@ export default function AdminDashboardPage() {
                   </div>
                 ))}
               </div>
-            </div>
+            </motion.div>
           </motion.div>
         )}
 
@@ -354,10 +357,10 @@ export default function AdminDashboardPage() {
             <div className="flex flex-wrap gap-3">
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search users..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="pl-9 bg-secondary/50" />
+                <Input placeholder="Search users..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="pl-9 bg-secondary/50 border-border/50" />
               </div>
               <Select value={userRoleFilter} onValueChange={setUserRoleFilter}>
-                <SelectTrigger className="w-36 bg-secondary/50"><SelectValue placeholder="Role" /></SelectTrigger>
+                <SelectTrigger className="w-36 bg-secondary/50 border-border/50"><SelectValue placeholder="Role" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Roles</SelectItem>
                   <SelectItem value="founder">Founder</SelectItem>
@@ -372,7 +375,7 @@ export default function AdminDashboardPage() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-border/50 bg-secondary/30">
+                    <tr className="border-b border-border/50 bg-secondary/20">
                       <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">User</th>
                       <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3 hidden sm:table-cell">Role</th>
                       <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3 hidden md:table-cell">Profile</th>
@@ -385,7 +388,7 @@ export default function AdminDashboardPage() {
                       <tr key={user.id} className="border-b border-border/30 hover:bg-secondary/20 transition-colors">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15">
                               <span className="text-[10px] font-semibold text-primary">{user.name.split(" ").map(n => n[0]).join("")}</span>
                             </div>
                             <div>
@@ -403,7 +406,7 @@ export default function AdminDashboardPage() {
                         <td className="px-4 py-3 hidden md:table-cell">
                           <div className="flex items-center gap-2">
                             <Progress value={user.profileCompletion} className="h-1.5 w-16" />
-                            <span className="text-[11px] text-muted-foreground">{user.profileCompletion}%</span>
+                            <span className="text-[11px] text-muted-foreground tabular-nums">{user.profileCompletion}%</span>
                           </div>
                         </td>
                         <td className="px-4 py-3">
@@ -427,12 +430,17 @@ export default function AdminDashboardPage() {
         {/* Moderation */}
         {activeSection === "moderation" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-            <h3 className="font-display text-sm font-semibold text-foreground">
-              Moderation Queue ({moderationQueue.length})
-            </h3>
+            <div>
+              <h3 className="font-display text-base font-semibold text-foreground">Moderation Queue</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">{moderationQueue.length} items pending review</p>
+            </div>
             {moderationQueue.map((item, i) => (
-              <motion.div key={item.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                className="rounded-xl border border-border/50 bg-card-gradient p-5"
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 8, filter: "blur(4px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                transition={{ ...stagger(i), duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="rounded-xl border border-border/50 bg-card p-5 transition-all duration-200 hover:border-primary/15"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3">
@@ -466,17 +474,24 @@ export default function AdminDashboardPage() {
         {activeSection === "taxonomies" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-display text-sm font-semibold text-foreground">Taxonomy Management</h3>
+              <div>
+                <h3 className="font-display text-base font-semibold text-foreground">Taxonomy Management</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Manage platform categories and tags</p>
+              </div>
               <Button variant="default" size="sm" className="text-xs gap-1.5"><Plus className="h-3 w-3" /> Add Category</Button>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {taxonomies.map((tax, i) => (
-                <motion.div key={tax.name} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                  className="rounded-xl border border-border/50 bg-card-gradient p-5 interactive-card"
+                <motion.div
+                  key={tax.name}
+                  initial={{ opacity: 0, y: 12, filter: "blur(4px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  transition={{ ...stagger(i), duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  className="rounded-xl border border-border/50 bg-card p-5 transition-all duration-300 hover:border-primary/20 hover:shadow-[0_2px_16px_hsl(var(--primary)/0.08)] active:scale-[0.99]"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="font-display text-sm font-semibold text-foreground">{tax.name}</h4>
-                    <Badge variant="secondary" className="text-[10px]">{tax.count} items</Badge>
+                    <Badge variant="secondary" className="text-[10px] tabular-nums">{tax.count} items</Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">{tax.examples}</p>
                   <Button variant="outline" size="sm" className="text-xs h-8 mt-3 w-full gap-1">

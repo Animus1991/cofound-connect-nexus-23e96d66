@@ -204,29 +204,34 @@ export default function ProfilePage() {
 
   const data = editing ? draft : profile;
 
-  const cardDelay = (i: number) => ({ initial: { opacity: 0, y: 14 }, animate: { opacity: 1, y: 0 }, transition: { delay: i * 0.06, duration: 0.4 } });
+  const stagger = (i: number) => ({
+    initial: { opacity: 0, y: 14, filter: "blur(4px)" },
+    animate: { opacity: 1, y: 0, filter: "blur(0px)" },
+    transition: { delay: i * 0.06, duration: 0.5, ease: [0.16, 1, 0.3, 1] as const },
+  });
 
   return (
     <AppLayout
       title="Profile"
       headerActions={
         !editing ? (
-          <Button variant="hero" size="sm" className="gap-2" onClick={() => setEditing(true)}>
+          <Button size="sm" className="gap-2" onClick={() => setEditing(true)}>
             <Edit3 className="h-3.5 w-3.5" /> Edit Profile
           </Button>
         ) : (
           <div className="flex gap-2">
-            <Button variant="hero" size="sm" className="gap-2" onClick={handleSave}><Save className="h-3.5 w-3.5" /> Save</Button>
+            <Button size="sm" className="gap-2" onClick={handleSave}><Save className="h-3.5 w-3.5" /> Save</Button>
             <Button variant="outline" size="sm" className="gap-2" onClick={handleCancel}><X className="h-3.5 w-3.5" /> Cancel</Button>
           </div>
         )
       }
     >
-      <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-6">
+      <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
         {/* Profile Header */}
-        <motion.div {...cardDelay(0)} className="rounded-2xl border border-border/50 bg-card-gradient p-6">
-          <div className="flex flex-col sm:flex-row sm:items-start gap-5">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-primary/20">
+        <motion.div {...stagger(0)} className="rounded-2xl border border-border/50 bg-card p-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-2xl" />
+          <div className="relative flex flex-col sm:flex-row sm:items-start gap-5">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-primary/15">
               <span className="text-2xl font-bold text-primary">JD</span>
             </div>
             <div className="flex-1 min-w-0">
@@ -246,7 +251,7 @@ export default function ProfilePage() {
               <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {data.location}</span>
                 <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {data.availability}</span>
-                <span className="flex items-center gap-1"><Briefcase className="h-3 w-3" /> {data.yearsExperience}+ years experience</span>
+                <span className="flex items-center gap-1"><Briefcase className="h-3 w-3" /> <span className="tabular-nums">{data.yearsExperience}+</span> years experience</span>
                 <span className="flex items-center gap-1"><GraduationCap className="h-3 w-3" /> {data.education}</span>
               </div>
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -260,17 +265,17 @@ export default function ProfilePage() {
 
         {/* Profile Completion + Match Relevance */}
         <div className="grid gap-6 lg:grid-cols-2">
-          <motion.div {...cardDelay(1)} className="rounded-2xl border border-border/50 bg-card-gradient p-6">
+          <motion.div {...stagger(1)} className="rounded-2xl border border-border/50 bg-card p-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-display text-sm font-semibold text-foreground">Profile Completion</h3>
-              <span className="text-sm font-bold text-primary">{completionPercent}%</span>
+              <span className="text-sm font-bold text-primary tabular-nums">{completionPercent}%</span>
             </div>
             <div className="h-2 rounded-full bg-secondary overflow-hidden mb-4">
               <motion.div className="h-full rounded-full bg-primary" initial={{ width: 0 }} animate={{ width: `${completionPercent}%` }} transition={{ duration: 0.8, ease: "easeOut" }} />
             </div>
             <div className="grid grid-cols-2 gap-2">
               {completionItems.map(item => (
-                <div key={item.label} className={`flex items-center gap-2 text-xs rounded-lg px-3 py-2 ${item.done ? "bg-primary/10 text-primary" : "bg-secondary/50 text-muted-foreground"}`}>
+                <div key={item.label} className={`flex items-center gap-2 text-xs rounded-lg px-3 py-2 transition-colors ${item.done ? "bg-primary/10 text-primary" : "bg-secondary/50 text-muted-foreground"}`}>
                   {item.done ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />}
                   {item.label}
                 </div>
@@ -278,8 +283,7 @@ export default function ProfilePage() {
             </div>
           </motion.div>
 
-          {/* Match Relevance Display */}
-          <motion.div {...cardDelay(2)} className="rounded-2xl border border-border/50 bg-card-gradient p-6">
+          <motion.div {...stagger(2)} className="rounded-2xl border border-border/50 bg-card p-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-display text-sm font-semibold text-foreground flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-primary" /> Match Relevance
@@ -305,14 +309,13 @@ export default function ProfilePage() {
         </div>
 
         {/* Experience Timeline */}
-        <motion.div {...cardDelay(3)} className="rounded-2xl border border-border/50 bg-card-gradient p-6">
+        <motion.div {...stagger(3)} className="rounded-2xl border border-border/50 bg-card p-6">
           <h3 className="font-display text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
             <Briefcase className="h-4 w-4 text-primary" /> Experience
           </h3>
           <div className="relative space-y-0">
             {experiences.map((exp, i) => (
               <div key={i} className="relative flex gap-4 pb-6 last:pb-0">
-                {/* Timeline line */}
                 {i < experiences.length - 1 && (
                   <div className="absolute left-[15px] top-8 bottom-0 w-px bg-border/50" />
                 )}
@@ -335,7 +338,7 @@ export default function ProfilePage() {
         </motion.div>
 
         {/* Skills Taxonomy */}
-        <motion.div {...cardDelay(4)} className="rounded-2xl border border-border/50 bg-card-gradient p-6">
+        <motion.div {...stagger(4)} className="rounded-2xl border border-border/50 bg-card p-6">
           <h3 className="font-display text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
             <Award className="h-4 w-4 text-primary" /> Skills Taxonomy
           </h3>
@@ -364,7 +367,7 @@ export default function ProfilePage() {
 
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Industries & Interests */}
-          <motion.div {...cardDelay(5)} className="rounded-2xl border border-border/50 bg-card-gradient p-6">
+          <motion.div {...stagger(5)} className="rounded-2xl border border-border/50 bg-card p-6">
             <h3 className="font-display text-sm font-semibold text-foreground mb-3">Industries & Interests</h3>
             <div className="flex flex-wrap gap-2">
               {data.interests.map(interest => (
@@ -383,13 +386,13 @@ export default function ProfilePage() {
           </motion.div>
 
           {/* Values & Preferences */}
-          <motion.div {...cardDelay(6)} className="rounded-2xl border border-border/50 bg-card-gradient p-6">
+          <motion.div {...stagger(6)} className="rounded-2xl border border-border/50 bg-card p-6">
             <h3 className="font-display text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
               <Heart className="h-4 w-4 text-primary" /> Values & Preferences
             </h3>
             <div className="grid grid-cols-2 gap-2">
               {values.map(v => (
-                <div key={v.label} className="rounded-lg bg-secondary/30 p-3 space-y-1">
+                <div key={v.label} className="rounded-lg bg-secondary/30 p-3 space-y-1 transition-colors hover:bg-secondary/40">
                   <div className="flex items-center gap-1.5">
                     <v.icon className="h-3 w-3 text-primary" />
                     <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{v.label}</span>
@@ -402,7 +405,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Role Intent */}
-        <motion.div {...cardDelay(7)} className="rounded-2xl border border-border/50 bg-card-gradient p-6">
+        <motion.div {...stagger(7)} className="rounded-2xl border border-border/50 bg-card p-6">
           <h3 className="font-display text-sm font-semibold text-foreground mb-4">Role Intent</h3>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
@@ -411,7 +414,7 @@ export default function ProfilePage() {
               { icon: Users, label: "Commitment", value: data.commitment, key: "commitment" },
               { icon: DollarSign, label: "Compensation", value: data.compensation, key: "compensation" },
             ].map(card => (
-              <div key={card.key} className="rounded-xl border border-border/30 bg-secondary/30 p-4">
+              <div key={card.key} className="rounded-xl border border-border/30 bg-secondary/20 p-4 transition-all duration-200 hover:bg-secondary/30">
                 <div className="flex items-center gap-2 mb-2">
                   <card.icon className="h-4 w-4 text-primary" />
                   <span className="text-[11px] text-muted-foreground uppercase tracking-wider">{card.label}</span>
@@ -427,14 +430,14 @@ export default function ProfilePage() {
         </motion.div>
 
         {/* Trust Signals */}
-        <motion.div {...cardDelay(8)} className="rounded-2xl border border-border/50 bg-card-gradient p-6">
+        <motion.div {...stagger(8)} className="rounded-2xl border border-border/50 bg-card p-6">
           <h3 className="font-display text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
             <Shield className="h-4 w-4 text-primary" /> Trust Signals
           </h3>
           <div className="grid gap-3 sm:grid-cols-2">
             {verificationItems.map(item => (
-              <div key={item.label} className={`flex items-center gap-3 rounded-xl border p-4 transition-all duration-200 hover:scale-[1.01] ${item.verified ? "border-primary/30 bg-primary/5" : "border-border/30 bg-secondary/20"}`}>
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${item.verified ? "bg-primary/20" : "bg-secondary"}`}>
+              <div key={item.label} className={`flex items-center gap-3 rounded-xl border p-4 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] ${item.verified ? "border-primary/20 bg-primary/5" : "border-border/30 bg-secondary/20"}`}>
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${item.verified ? "bg-primary/15" : "bg-secondary"}`}>
                   <item.icon className={`h-4 w-4 ${item.verified ? "text-primary" : "text-muted-foreground"}`} />
                 </div>
                 <div className="flex-1">
@@ -448,7 +451,7 @@ export default function ProfilePage() {
         </motion.div>
 
         {/* Contact & Links */}
-        <motion.div {...cardDelay(9)} className="rounded-2xl border border-border/50 bg-card-gradient p-6">
+        <motion.div {...stagger(9)} className="rounded-2xl border border-border/50 bg-card p-6">
           <h3 className="font-display text-sm font-semibold text-foreground mb-4">Contact & Links</h3>
           <div className="grid gap-3 sm:grid-cols-2">
             {[
@@ -457,7 +460,7 @@ export default function ProfilePage() {
               { icon: Github, label: "GitHub", value: data.github, key: "github" },
               { icon: Globe, label: "Website", value: data.website, key: "website" },
             ].map(link => (
-              <div key={link.key} className="flex items-center gap-3">
+              <div key={link.key} className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-secondary/30">
                 <link.icon className="h-4 w-4 text-muted-foreground shrink-0" />
                 {editing ? (
                   <Input value={(draft as any)[link.key]} onChange={e => setDraft({ ...draft, [link.key]: e.target.value })} className="h-8 text-xs" placeholder={link.label} />

@@ -85,6 +85,8 @@ export default function CommunitiesPage() {
 
   const featuredCommunities = mockCommunities.filter(c => c.trending);
 
+  const stagger = (i: number) => ({ delay: i * 0.06 });
+
   return (
     <AppLayout
       title="Communities"
@@ -94,63 +96,92 @@ export default function CommunitiesPage() {
         </Button>
       }
     >
-      <div className="p-4 sm:p-6 space-y-6">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto">
         {/* Featured */}
         {!isLoading && (
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="flex items-center gap-2 mb-3">
-              <Flame className="h-4 w-4 text-accent" />
-              <h2 className="font-display text-sm font-semibold text-foreground">Trending Communities</h2>
+          <motion.div
+            initial={{ opacity: 0, y: 16, filter: "blur(4px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
+                <Flame className="h-4 w-4 text-accent" />
+              </div>
+              <div>
+                <h2 className="font-display text-base font-semibold text-foreground">Trending Communities</h2>
+                <p className="text-xs text-muted-foreground">Most active communities this week</p>
+              </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
-              {featuredCommunities.map((c) => (
-                <Link key={c.id} to={`/communities/${c.id}`} className="rounded-xl border border-primary/20 bg-card-gradient p-4 hover-lift block">
-                  <div className="flex items-center justify-between mb-2">
-                    <Badge className="text-[10px] bg-accent/10 text-accent border-accent/20">
-                      <TrendingUp className="h-2.5 w-2.5 mr-1" /> Trending
-                    </Badge>
-                    {c.isPublic ? <Globe className="h-3.5 w-3.5 text-muted-foreground" /> : <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
-                  </div>
-                  <h3 className="font-display text-sm font-semibold text-foreground">{c.title}</h3>
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{c.description}</p>
-                  <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
-                    <span className="flex items-center gap-1"><Users className="h-3 w-3" />{c.members.toLocaleString()}</span>
-                    <span className="flex items-center gap-1"><MessageSquare className="h-3 w-3" />{c.posts}</span>
-                  </div>
-                </Link>
+              {featuredCommunities.map((c, i) => (
+                <motion.div
+                  key={c.id}
+                  initial={{ opacity: 0, y: 12, filter: "blur(4px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  transition={{ ...stagger(i + 1), duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <Link
+                    to={`/communities/${c.id}`}
+                    className="group rounded-xl border border-primary/15 bg-card p-4 block transition-all duration-300 hover:border-primary/25 hover:shadow-[0_2px_16px_hsl(var(--primary)/0.08)] active:scale-[0.99]"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <Badge className="text-[10px] bg-accent/10 text-accent border-accent/20">
+                        <TrendingUp className="h-2.5 w-2.5 mr-1" /> Trending
+                      </Badge>
+                      {c.isPublic ? <Globe className="h-3.5 w-3.5 text-muted-foreground" /> : <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
+                    </div>
+                    <h3 className="font-display text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{c.title}</h3>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{c.description}</p>
+                    <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
+                      <span className="flex items-center gap-1"><Users className="h-3 w-3" />{c.members.toLocaleString()}</span>
+                      <span className="flex items-center gap-1"><MessageSquare className="h-3 w-3" />{c.posts}</span>
+                    </div>
+                  </Link>
+                </motion.div>
               ))}
             </div>
           </motion.div>
         )}
 
         {/* Search & Filters */}
-        <div className="flex flex-wrap gap-3">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-wrap gap-3"
+        >
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search communities..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 bg-secondary/50" />
+            <Input placeholder="Search communities..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 bg-secondary/50 border-border/50" />
           </div>
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-40 bg-secondary/50"><SelectValue placeholder="Category" /></SelectTrigger>
+            <SelectTrigger className="w-40 bg-secondary/50 border-border/50"><SelectValue placeholder="Category" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
               {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={accessFilter} onValueChange={setAccessFilter}>
-            <SelectTrigger className="w-36 bg-secondary/50"><SelectValue placeholder="Access" /></SelectTrigger>
+            <SelectTrigger className="w-36 bg-secondary/50 border-border/50"><SelectValue placeholder="Access" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All</SelectItem>
               <SelectItem value="public">Public</SelectItem>
               <SelectItem value="private">Private</SelectItem>
             </SelectContent>
           </Select>
-        </div>
+        </motion.div>
 
         {/* All Communities */}
         <div>
-          <h2 className="font-display text-sm font-semibold text-foreground mb-3">
-            All Communities ({filtered.length})
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-display text-base font-semibold text-foreground">
+                All Communities
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">{filtered.length} communities found</p>
+            </div>
+          </div>
           {isLoading ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
@@ -161,17 +192,17 @@ export default function CommunitiesPage() {
                 {filtered.map((community, i) => (
                   <motion.div
                     key={community.id}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className="rounded-2xl border border-border/50 bg-card-gradient p-5 interactive-card"
+                    initial={{ opacity: 0, y: 12, filter: "blur(4px)" }}
+                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    transition={{ ...stagger(i), duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    className="group rounded-2xl border border-border/50 bg-card p-5 transition-all duration-300 hover:border-primary/20 hover:shadow-[0_2px_16px_hsl(var(--primary)/0.08)] active:scale-[0.99]"
                   >
                     <div className="flex items-center justify-between mb-3">
                       <Badge variant="secondary" className="text-[10px]">{community.category}</Badge>
                       {community.isPublic ? <Globe className="h-3.5 w-3.5 text-muted-foreground" /> : <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
                     </div>
                     <Link to={`/communities/${community.id}`}>
-                      <h3 className="font-display text-base font-semibold text-foreground hover:text-primary transition-colors">{community.title}</h3>
+                      <h3 className="font-display text-base font-semibold text-foreground group-hover:text-primary transition-colors">{community.title}</h3>
                     </Link>
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{community.description}</p>
 
@@ -182,8 +213,8 @@ export default function CommunitiesPage() {
                     </div>
 
                     <div className="flex items-center gap-4 mt-3 text-[11px] text-muted-foreground">
-                      <span className="flex items-center gap-1"><Users className="h-3 w-3" />{community.members.toLocaleString()} members</span>
-                      <span className="flex items-center gap-1"><MessageSquare className="h-3 w-3" />{community.posts} posts</span>
+                      <span className="flex items-center gap-1"><Users className="h-3 w-3" /><span className="tabular-nums">{community.members.toLocaleString()}</span> members</span>
+                      <span className="flex items-center gap-1"><MessageSquare className="h-3 w-3" /><span className="tabular-nums">{community.posts}</span> posts</span>
                     </div>
                     <p className="text-[11px] text-primary/70 mt-1">{community.recentActivity}</p>
 
@@ -210,11 +241,17 @@ export default function CommunitiesPage() {
         </div>
 
         {!isLoading && filtered.length === 0 && (
-          <div className="text-center py-16">
-            <Users className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-16 rounded-2xl border border-border/50 bg-card"
+          >
+            <div className="flex h-16 w-16 mx-auto items-center justify-center rounded-2xl bg-secondary/50 mb-4">
+              <Users className="h-8 w-8 text-muted-foreground/50" />
+            </div>
             <h3 className="font-display text-lg font-semibold text-foreground mb-2">No communities found</h3>
             <p className="text-sm text-muted-foreground">Try different search terms or filters</p>
-          </div>
+          </motion.div>
         )}
       </div>
     </AppLayout>
