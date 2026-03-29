@@ -64,6 +64,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AnimatedRoutes />
+          <ChatWidget />
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
