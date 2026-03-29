@@ -63,9 +63,8 @@ export default function ChatWidget() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Don't show on landing, login, signup
   const hiddenPaths = ["/", "/login", "/signup", "/onboarding"];
-  if (hiddenPaths.includes(location.pathname)) return null;
+  const isHidden = hiddenPaths.includes(location.pathname);
 
   const totalUnread = mockUserConversations.reduce((sum, c) => sum + c.unread, 0);
 
@@ -80,6 +79,8 @@ export default function ChatWidget() {
   useEffect(() => {
     if (view === "thread") inputRef.current?.focus();
   }, [view]);
+
+  if (isHidden) return null;
 
   const openAgentChat = useCallback((agent: AIAgent) => {
     setActiveAgent(agent);
