@@ -544,14 +544,25 @@ export default function MessagesPage() {
                     className="bg-secondary/50 border-border/50"
                     disabled={isTyping}
                   />
-                  <Button
-                    size="icon"
-                    onClick={handleSendMessage}
-                    disabled={!messageInput.trim() || isTyping}
-                    className="shrink-0"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
+                  {isStreaming && currentConvo?.type === "ai" ? (
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      onClick={cancelStreaming}
+                      className="shrink-0"
+                    >
+                      <Square className="h-3.5 w-3.5 fill-current" />
+                    </Button>
+                  ) : (
+                    <Button
+                      size="icon"
+                      onClick={handleSendMessage}
+                      disabled={!messageInput.trim() || isTyping}
+                      className="shrink-0"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </>

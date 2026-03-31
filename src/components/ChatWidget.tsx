@@ -471,14 +471,26 @@ export default function ChatWidget() {
                           className="flex-1 h-8 text-sm border-border"
                           disabled={isTyping}
                         />
-                        <Button
-                          type="submit"
-                          size="icon"
-                          className="h-8 w-8 shrink-0"
-                          disabled={!input.trim() || isTyping}
-                        >
-                          <Send className="h-3.5 w-3.5" />
-                        </Button>
+                        {isStreaming ? (
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="destructive"
+                            className="h-8 w-8 shrink-0"
+                            onClick={cancelStreaming}
+                          >
+                            <Square className="h-3 w-3 fill-current" />
+                          </Button>
+                        ) : (
+                          <Button
+                            type="submit"
+                            size="icon"
+                            className="h-8 w-8 shrink-0"
+                            disabled={!input.trim() || isTyping}
+                          >
+                            <Send className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </form>
                     </div>
                   </div>
