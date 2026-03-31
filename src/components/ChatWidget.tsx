@@ -382,7 +382,7 @@ export default function ChatWidget() {
                           </div>
                         )}
 
-                        {currentMessages.map((msg) => (
+                        {currentMessages.filter((m) => m.content !== "").map((msg) => (
                           <div
                             key={msg.id}
                             className={`flex ${

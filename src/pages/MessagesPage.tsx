@@ -368,7 +368,7 @@ export default function MessagesPage() {
                     </div>
                   )}
 
-                  {currentMessages.map((msg) => {
+                  {currentMessages.filter((m) => m.content !== "").map((msg) => {
                     const own = isOwnMessage(msg, currentConvo);
                     return (
                       <motion.div
