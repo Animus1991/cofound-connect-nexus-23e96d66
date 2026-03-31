@@ -139,6 +139,12 @@ export default function LandingPage() {
                 Log in
               </Button>
             </Link>
+            <Link to="/demo">
+              <Button variant="outline" size="sm" className="gap-1.5 border-primary/40 text-primary hover:bg-primary/10">
+                <Zap className="h-3.5 w-3.5" />
+                Demo
+              </Button>
+            </Link>
             <Link to="/signup">
               <Button variant="hero" size="sm">
                 Join Free
@@ -207,6 +213,12 @@ export default function LandingPage() {
                 <Button variant="hero" size="lg" className="gap-2 text-base px-8 py-6">
                   Get Started Free
                   <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link to="/demo">
+                <Button variant="hero-outline" size="lg" className="gap-2 text-base px-8 py-6">
+                  <Zap className="h-4 w-4" />
+                  Try Demo
                 </Button>
               </Link>
               <Link to="/discover">

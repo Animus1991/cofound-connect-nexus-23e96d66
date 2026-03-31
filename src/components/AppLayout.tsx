@@ -1,9 +1,10 @@
 import { ReactNode } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { MobileHeader, MobileBottomNav } from "@/components/MobileNav";
 import ThemeToggle from "@/components/ThemeToggle";
 import GlobalSearch from "@/components/GlobalSearch";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Rocket,
   Home,
@@ -17,6 +18,8 @@ import {
   LogOut,
   Target,
   Shield,
+  Zap,
+  X,
 } from "lucide-react";
 
 const navItems = [
@@ -35,11 +38,35 @@ interface AppLayoutProps {
   headerActions?: ReactNode;
 }
 
+const DEMO_EMAIL = "demo@cofound.io";
+
 export default function AppLayout({ title, children, headerActions }: AppLayoutProps) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const isDemo = user?.email === DEMO_EMAIL;
 
   return (
     <div className="flex min-h-screen bg-background">
+      {/* Demo mode banner */}
+      {isDemo && (
+        <div className="fixed top-0 left-0 right-0 z-[60] flex items-center justify-between gap-3 bg-amber-500 px-4 py-1.5 text-amber-950 text-xs font-medium">
+          <div className="flex items-center gap-2">
+            <Zap className="h-3.5 w-3.5 shrink-0" />
+            <span>You are in Demo Mode — data is read-only and not saved.</span>
+            <Link to="/signup" className="underline font-semibold hover:text-amber-800 transition-colors">
+              Create a free account
+            </Link>
+          </div>
+          <button
+            onClick={() => { logout(); navigate("/"); }}
+            className="shrink-0 rounded p-0.5 hover:bg-amber-600/30 transition-colors"
+            aria-label="Exit demo"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
       <MobileHeader />
 
       {/* Desktop Sidebar */}

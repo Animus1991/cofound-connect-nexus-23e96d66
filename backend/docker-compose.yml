@@ -1,0 +1,23 @@
+# PostgreSQL for CoFounderBay development
+# Run: docker compose up -d
+# Stop: docker compose down
+#
+# If port 5432 is already in use (e.g. local PostgreSQL), change to "5433:5432"
+# and set DATABASE_URL=postgresql://postgres:postgres@localhost:5433/cofounderbay
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cofounderbay-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cofounderbay
+    ports:
+      - "5432:5432"
+    volumes:
+      - cofounderbay_pgdata:/var/lib/postgresql/data
+
+volumes:
+  cofounderbay_pgdata:
