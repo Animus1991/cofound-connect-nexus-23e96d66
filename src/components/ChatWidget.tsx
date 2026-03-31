@@ -14,6 +14,7 @@ import {
   Sparkles,
   User,
   Maximize2,
+  Square,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AI_AGENTS, type AIAgent } from "@/services/aiService";
@@ -29,9 +30,11 @@ export default function ChatWidget() {
     conversations,
     aiConversations,
     totalUnread,
+    isStreaming,
     getMessages,
     sendMessage,
     sendAIMessage,
+    cancelStreaming,
     markAsRead,
   } = useMessaging();
 
@@ -468,14 +471,26 @@ export default function ChatWidget() {
                           className="flex-1 h-8 text-sm border-border"
                           disabled={isTyping}
                         />
-                        <Button
-                          type="submit"
-                          size="icon"
-                          className="h-8 w-8 shrink-0"
-                          disabled={!input.trim() || isTyping}
-                        >
-                          <Send className="h-3.5 w-3.5" />
-                        </Button>
+                        {isStreaming ? (
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="destructive"
+                            className="h-8 w-8 shrink-0"
+                            onClick={cancelStreaming}
+                          >
+                            <Square className="h-3 w-3 fill-current" />
+                          </Button>
+                        ) : (
+                          <Button
+                            type="submit"
+                            size="icon"
+                            className="h-8 w-8 shrink-0"
+                            disabled={!input.trim() || isTyping}
+                          >
+                            <Send className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </form>
                     </div>
                   </div>

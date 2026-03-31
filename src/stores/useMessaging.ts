@@ -96,6 +96,8 @@ let _conversations = initialConversations;
 let _messages = initialMessages;
 let _introRequests = initialIntroRequests;
 let _listeners: Array<() => void> = [];
+let _streamingAbort: AbortController | null = null;
+let _isStreaming = false;
 
 function notify() {
   _listeners.forEach((l) => l());
@@ -216,6 +218,11 @@ export function useMessaging() {
       notify();
 
       // Stream tokens into the placeholder message
+      const controller = new AbortController();
+      _streamingAbort = controller;
+      _isStreaming = true;
+      notify();
+
       try {
         await streamAIResponse(
           agentId,
@@ -237,12 +244,16 @@ export function useMessaging() {
               _conversations = _conversations.map((c) =>
                 c.id === convoId ? { ...c, lastMessage: finalMsg.content.slice(0, 60), time: "Just now" } : c
               );
-              notify();
             }
           },
+          controller.signal,
         );
       } catch {
         // Silently handle — could add error state later
+      } finally {
+        _streamingAbort = null;
+        _isStreaming = false;
+        notify();
       }
     },
     []
@@ -298,6 +309,14 @@ export function useMessaging() {
     notify();
   }, []);
 
+  const cancelStreaming = useCallback(() => {
+    if (_streamingAbort) {
+      _streamingAbort.abort();
+    }
+  }, []);
+
+  const isStreaming = _isStreaming;
+
   return {
     conversations,
     aiConversations,
@@ -305,9 +324,11 @@ export function useMessaging() {
     introRequests,
     totalUnread,
     pendingIntros,
+    isStreaming,
     getMessages,
     sendMessage,
     sendAIMessage,
+    cancelStreaming,
     toggleReaction,
     acceptIntro,
     declineIntro,

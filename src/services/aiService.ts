@@ -110,9 +110,12 @@ export async function streamAIResponse(
   _message: string,
   onDelta: (token: string) => void,
   onDone: () => void,
+  signal?: AbortSignal,
 ): Promise<void> {
   // Small initial "thinking" pause
   await new Promise((r) => setTimeout(r, 400 + Math.random() * 400));
+
+  if (signal?.aborted) { onDone(); return; }
 
   const responses = MOCK_RESPONSES[agentId] || MOCK_RESPONSES["community-guide"];
   const fullText = responses[Math.floor(Math.random() * responses.length)];
@@ -120,6 +123,7 @@ export async function streamAIResponse(
   // Stream word-by-word with natural cadence
   const words = fullText.split(/(\s+)/); // keep whitespace tokens
   for (const word of words) {
+    if (signal?.aborted) break;
     onDelta(word);
     // Variable delay: short for whitespace, longer for content words
     const delay = word.trim() ? 18 + Math.random() * 32 : 5;
