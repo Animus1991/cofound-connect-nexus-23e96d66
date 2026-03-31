@@ -30,9 +30,11 @@ export default function ChatWidget() {
     conversations,
     aiConversations,
     totalUnread,
+    isStreaming,
     getMessages,
     sendMessage,
     sendAIMessage,
+    cancelStreaming,
     markAsRead,
   } = useMessaging();
 
