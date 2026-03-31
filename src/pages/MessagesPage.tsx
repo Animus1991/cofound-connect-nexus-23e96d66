@@ -20,6 +20,7 @@ import {
   Image,
   FileText,
   Sparkles,
+  Square,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
