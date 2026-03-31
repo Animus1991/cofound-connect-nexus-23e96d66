@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback, useMemo } from "react";
-import { AI_AGENTS, getAIResponse, type AIAgent } from "@/services/aiService";
+import { AI_AGENTS, streamAIResponse, type AIAgent } from "@/services/aiService";
 
 // ── Shared Types ───────────────────────────────────────────
 
@@ -202,23 +202,47 @@ export function useMessaging() {
       _messages = { ..._messages, [convoId]: [...(_messages[convoId] || []), userMsg] };
       notify();
 
-      // Get AI response
+      // Create a placeholder assistant message for streaming
+      const aiMsgId = `msg-${Date.now()}-ai`;
+      const aiMsg: UnifiedMessage = {
+        id: aiMsgId,
+        role: "assistant",
+        content: "",
+        timestamp: new Date(),
+        agentId,
+        reactions: [],
+      };
+      _messages = { ..._messages, [convoId]: [...(_messages[convoId] || []), aiMsg] };
+      notify();
+
+      // Stream tokens into the placeholder message
       try {
-        const response = await getAIResponse(agentId, content);
-        const aiMsg: UnifiedMessage = {
-          id: `msg-${Date.now()}-ai`,
-          role: "assistant",
-          content: response,
-          timestamp: new Date(),
+        await streamAIResponse(
           agentId,
-          reactions: [],
-        };
-        _messages = { ..._messages, [convoId]: [...(_messages[convoId] || []), aiMsg] };
-        notify();
-        return aiMsg;
+          content,
+          (token) => {
+            const convoMsgs = [...(_messages[convoId] || [])];
+            const idx = convoMsgs.findIndex((m) => m.id === aiMsgId);
+            if (idx !== -1) {
+              convoMsgs[idx] = { ...convoMsgs[idx], content: convoMsgs[idx].content + token };
+              _messages = { ..._messages, [convoId]: convoMsgs };
+              notify();
+            }
+          },
+          () => {
+            // Update lastMessage on conversation
+            const convoMsgs = _messages[convoId] || [];
+            const finalMsg = convoMsgs.find((m) => m.id === aiMsgId);
+            if (finalMsg) {
+              _conversations = _conversations.map((c) =>
+                c.id === convoId ? { ...c, lastMessage: finalMsg.content.slice(0, 60), time: "Just now" } : c
+              );
+              notify();
+            }
+          },
+        );
       } catch {
         // Silently handle — could add error state later
-        return null;
       }
     },
     []

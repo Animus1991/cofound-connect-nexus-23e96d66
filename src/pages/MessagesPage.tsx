@@ -73,9 +73,10 @@ export default function MessagesPage() {
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const lastMsgContent = currentMessages[currentMessages.length - 1]?.content;
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [currentMessages.length, isTyping]);
+  }, [currentMessages.length, isTyping, lastMsgContent]);
 
   const handleSelectConvo = (id: string) => {
     setSelectedConvo(id);
@@ -99,6 +100,13 @@ export default function MessagesPage() {
       sendMessage(selectedConvo, text);
     }
   };
+
+  // Show typing dots only during the brief initial pause before first token arrives
+  const isStreamingEmpty =
+    currentConvo?.type === "ai" &&
+    currentMessages.length > 0 &&
+    currentMessages[currentMessages.length - 1]?.role === "assistant" &&
+    currentMessages[currentMessages.length - 1]?.content === "";
 
   const isOwnMessage = (msg: UnifiedMessage, convo: Conversation | undefined) => {
     if (!convo) return false;
@@ -360,7 +368,7 @@ export default function MessagesPage() {
                     </div>
                   )}
 
-                  {currentMessages.map((msg) => {
+                  {currentMessages.filter((m) => m.content !== "").map((msg) => {
                     const own = isOwnMessage(msg, currentConvo);
                     return (
                       <motion.div
@@ -488,7 +496,7 @@ export default function MessagesPage() {
                   })}
 
                   {/* AI typing indicator */}
-                  {isTyping && (
+                  {(isTyping || isStreamingEmpty) && (
                     <div className="flex items-end gap-1.5">
                       <span className="text-sm">{currentConvo.agentAvatar || "🤖"}</span>
                       <div className="bg-secondary rounded-2xl rounded-bl-sm px-3.5 py-2.5">

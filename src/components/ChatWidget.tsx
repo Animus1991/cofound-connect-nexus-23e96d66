@@ -52,9 +52,11 @@ export default function ChatWidget() {
   const currentConvoId = activeAgent ? `agent-${activeAgent.id}` : activeConvoId;
   const currentMessages = currentConvoId ? getMessages(currentConvoId) : [];
 
+  // Auto-scroll on new messages AND on streaming content changes
+  const lastMsgContent = currentMessages[currentMessages.length - 1]?.content;
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [currentMessages.length, isTyping]);
+  }, [currentMessages.length, isTyping, lastMsgContent]);
 
   useEffect(() => {
     if (view === "thread") inputRef.current?.focus();
@@ -96,6 +98,13 @@ export default function ChatWidget() {
       sendMessage(activeConvoId, text);
     }
   };
+
+  // Show typing dots only during the brief initial thinking pause (before first token)
+  const isStreamingActive = activeAgent
+    ? currentMessages.length > 0 &&
+      currentMessages[currentMessages.length - 1]?.role === "assistant" &&
+      currentMessages[currentMessages.length - 1]?.content === ""
+    : false;
 
   return (
     <>
@@ -373,7 +382,7 @@ export default function ChatWidget() {
                           </div>
                         )}
 
-                        {currentMessages.map((msg) => (
+                        {currentMessages.filter((m) => m.content !== "").map((msg) => (
                           <div
                             key={msg.id}
                             className={`flex ${
@@ -417,7 +426,7 @@ export default function ChatWidget() {
                           </div>
                         ))}
 
-                        {isTyping && (
+                        {(isTyping || isStreamingActive) && (
                           <div className="flex items-end gap-1.5">
                             <span className="text-sm">
                               {activeAgent?.avatar || "🤖"}
