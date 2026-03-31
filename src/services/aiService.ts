@@ -101,6 +101,34 @@ export async function getAIResponse(agentId: string, message: string): Promise<s
   return responses[Math.floor(Math.random() * responses.length)];
 }
 
+/**
+ * Streaming version — calls onDelta with small chunks, simulating token-by-token delivery.
+ * When a real backend is connected, replace the internals with SSE fetch.
+ */
+export async function streamAIResponse(
+  agentId: string,
+  _message: string,
+  onDelta: (token: string) => void,
+  onDone: () => void,
+): Promise<void> {
+  // Small initial "thinking" pause
+  await new Promise((r) => setTimeout(r, 400 + Math.random() * 400));
+
+  const responses = MOCK_RESPONSES[agentId] || MOCK_RESPONSES["community-guide"];
+  const fullText = responses[Math.floor(Math.random() * responses.length)];
+
+  // Stream word-by-word with natural cadence
+  const words = fullText.split(/(\s+)/); // keep whitespace tokens
+  for (const word of words) {
+    onDelta(word);
+    // Variable delay: short for whitespace, longer for content words
+    const delay = word.trim() ? 18 + Math.random() * 32 : 5;
+    await new Promise((r) => setTimeout(r, delay));
+  }
+
+  onDone();
+}
+
 export function getAgent(agentId: string): AIAgent | undefined {
   return AI_AGENTS.find((a) => a.id === agentId);
 }

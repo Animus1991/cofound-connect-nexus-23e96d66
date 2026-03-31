@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback, useMemo } from "react";
-import { AI_AGENTS, getAIResponse, type AIAgent } from "@/services/aiService";
+import { AI_AGENTS, streamAIResponse, type AIAgent } from "@/services/aiService";
 
 // ── Shared Types ───────────────────────────────────────────
 
