@@ -218,6 +218,11 @@ export function useMessaging() {
       notify();
 
       // Stream tokens into the placeholder message
+      const controller = new AbortController();
+      _streamingAbort = controller;
+      _isStreaming = true;
+      notify();
+
       try {
         await streamAIResponse(
           agentId,
@@ -239,12 +244,16 @@ export function useMessaging() {
               _conversations = _conversations.map((c) =>
                 c.id === convoId ? { ...c, lastMessage: finalMsg.content.slice(0, 60), time: "Just now" } : c
               );
-              notify();
             }
           },
+          controller.signal,
         );
       } catch {
         // Silently handle — could add error state later
+      } finally {
+        _streamingAbort = null;
+        _isStreaming = false;
+        notify();
       }
     },
     []
