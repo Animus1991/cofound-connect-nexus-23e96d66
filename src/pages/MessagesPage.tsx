@@ -73,9 +73,10 @@ export default function MessagesPage() {
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const lastMsgContent = currentMessages[currentMessages.length - 1]?.content;
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [currentMessages.length, isTyping]);
+  }, [currentMessages.length, isTyping, lastMsgContent]);
 
   const handleSelectConvo = (id: string) => {
     setSelectedConvo(id);
