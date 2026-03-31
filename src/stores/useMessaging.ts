@@ -309,6 +309,14 @@ export function useMessaging() {
     notify();
   }, []);
 
+  const cancelStreaming = useCallback(() => {
+    if (_streamingAbort) {
+      _streamingAbort.abort();
+    }
+  }, []);
+
+  const isStreaming = _isStreaming;
+
   return {
     conversations,
     aiConversations,
@@ -316,9 +324,11 @@ export function useMessaging() {
     introRequests,
     totalUnread,
     pendingIntros,
+    isStreaming,
     getMessages,
     sendMessage,
     sendAIMessage,
+    cancelStreaming,
     toggleReaction,
     acceptIntro,
     declineIntro,
