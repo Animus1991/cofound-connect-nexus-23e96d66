@@ -96,6 +96,8 @@ let _conversations = initialConversations;
 let _messages = initialMessages;
 let _introRequests = initialIntroRequests;
 let _listeners: Array<() => void> = [];
+let _streamingAbort: AbortController | null = null;
+let _isStreaming = false;
 
 function notify() {
   _listeners.forEach((l) => l());
