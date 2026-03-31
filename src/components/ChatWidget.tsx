@@ -14,6 +14,7 @@ import {
   Sparkles,
   User,
   Maximize2,
+  Square,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AI_AGENTS, type AIAgent } from "@/services/aiService";
