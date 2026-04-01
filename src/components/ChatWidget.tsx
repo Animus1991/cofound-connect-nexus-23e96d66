@@ -14,6 +14,7 @@ import {
   Sparkles,
   User,
   Maximize2,
+  Square,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AI_AGENTS, type AIAgent } from "@/services/aiService";
@@ -29,10 +30,12 @@ export default function ChatWidget() {
     conversations,
     aiConversations,
     totalUnread,
+    isStreaming,
     getMessages,
     loadMessages,
     sendMessage,
     sendAIMessage,
+    cancelStreaming,
     markAsRead,
   } = useMessaging();
 
@@ -53,9 +56,11 @@ export default function ChatWidget() {
   const currentConvoId = activeAgent ? `agent-${activeAgent.id}` : activeConvoId;
   const currentMessages = currentConvoId ? getMessages(currentConvoId) : [];
 
+  // Auto-scroll on new messages AND on streaming content changes
+  const lastMsgContent = currentMessages[currentMessages.length - 1]?.content;
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [currentMessages.length, isTyping]);
+  }, [currentMessages.length, isTyping, lastMsgContent]);
 
   useEffect(() => {
     if (view === "thread") inputRef.current?.focus();
@@ -98,6 +103,13 @@ export default function ChatWidget() {
       sendMessage(activeConvoId, text);
     }
   };
+
+  // Show typing dots only during the brief initial thinking pause (before first token)
+  const isStreamingActive = activeAgent
+    ? currentMessages.length > 0 &&
+      currentMessages[currentMessages.length - 1]?.role === "assistant" &&
+      currentMessages[currentMessages.length - 1]?.content === ""
+    : false;
 
   return (
     <>
@@ -375,7 +387,7 @@ export default function ChatWidget() {
                           </div>
                         )}
 
-                        {currentMessages.map((msg) => (
+                        {currentMessages.filter((m) => m.content !== "").map((msg) => (
                           <div
                             key={msg.id}
                             className={`flex ${
@@ -419,7 +431,7 @@ export default function ChatWidget() {
                           </div>
                         ))}
 
-                        {isTyping && (
+                        {(isTyping || isStreamingActive) && (
                           <div className="flex items-end gap-1.5">
                             <span className="text-sm">
                               {activeAgent?.avatar || "🤖"}
@@ -461,14 +473,26 @@ export default function ChatWidget() {
                           className="flex-1 h-8 text-sm border-border"
                           disabled={isTyping}
                         />
-                        <Button
-                          type="submit"
-                          size="icon"
-                          className="h-8 w-8 shrink-0"
-                          disabled={!input.trim() || isTyping}
-                        >
-                          <Send className="h-3.5 w-3.5" />
-                        </Button>
+                        {isStreaming ? (
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="destructive"
+                            className="h-8 w-8 shrink-0"
+                            onClick={cancelStreaming}
+                          >
+                            <Square className="h-3 w-3 fill-current" />
+                          </Button>
+                        ) : (
+                          <Button
+                            type="submit"
+                            size="icon"
+                            className="h-8 w-8 shrink-0"
+                            disabled={!input.trim() || isTyping}
+                          >
+                            <Send className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </form>
                     </div>
                   </div>

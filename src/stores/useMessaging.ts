@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { AI_AGENTS, getAIResponse, type AIAgent } from "@/services/aiService";
+import { AI_AGENTS, streamAIResponse, type AIAgent } from "@/services/aiService";
 import { api } from "@/lib/api";
 
 // ── Shared Types ───────────────────────────────────────────
@@ -97,6 +97,8 @@ let _conversations = initialConversations;
 let _messages = initialMessages;
 let _introRequests = initialIntroRequests;
 let _listeners: Array<() => void> = [];
+let _streamingAbort: AbortController | null = null;
+let _isStreaming = false;
 
 function notify() {
   _listeners.forEach((l) => l());
@@ -293,23 +295,56 @@ export function useMessaging() {
       _messages = { ..._messages, [convoId]: [...(_messages[convoId] || []), userMsg] };
       notify();
 
-      // Get AI response
+      // Create a placeholder assistant message for streaming
+      const aiMsgId = `msg-${Date.now()}-ai`;
+      const aiMsg: UnifiedMessage = {
+        id: aiMsgId,
+        role: "assistant",
+        content: "",
+        timestamp: new Date(),
+        agentId,
+        reactions: [],
+      };
+      _messages = { ..._messages, [convoId]: [...(_messages[convoId] || []), aiMsg] };
+      notify();
+
+      // Stream tokens into the placeholder message
+      const controller = new AbortController();
+      _streamingAbort = controller;
+      _isStreaming = true;
+      notify();
+
       try {
-        const response = await getAIResponse(agentId, content);
-        const aiMsg: UnifiedMessage = {
-          id: `msg-${Date.now()}-ai`,
-          role: "assistant",
-          content: response,
-          timestamp: new Date(),
+        await streamAIResponse(
           agentId,
-          reactions: [],
-        };
-        _messages = { ..._messages, [convoId]: [...(_messages[convoId] || []), aiMsg] };
-        notify();
-        return aiMsg;
+          content,
+          (token) => {
+            const convoMsgs = [...(_messages[convoId] || [])];
+            const idx = convoMsgs.findIndex((m) => m.id === aiMsgId);
+            if (idx !== -1) {
+              convoMsgs[idx] = { ...convoMsgs[idx], content: convoMsgs[idx].content + token };
+              _messages = { ..._messages, [convoId]: convoMsgs };
+              notify();
+            }
+          },
+          () => {
+            // Update lastMessage on conversation
+            const convoMsgs = _messages[convoId] || [];
+            const finalMsg = convoMsgs.find((m) => m.id === aiMsgId);
+            if (finalMsg) {
+              _conversations = _conversations.map((c) =>
+                c.id === convoId ? { ...c, lastMessage: finalMsg.content.slice(0, 60), time: "Just now" } : c
+              );
+            }
+          },
+          controller.signal,
+        );
       } catch {
         // Silently handle — could add error state later
-        return null;
+      } finally {
+        _streamingAbort = null;
+        _isStreaming = false;
+        notify();
       }
     },
     []
@@ -365,6 +400,14 @@ export function useMessaging() {
     notify();
   }, []);
 
+  const cancelStreaming = useCallback(() => {
+    if (_streamingAbort) {
+      _streamingAbort.abort();
+    }
+  }, []);
+
+  const isStreaming = _isStreaming;
+
   return {
     conversations,
     aiConversations,
@@ -372,10 +415,12 @@ export function useMessaging() {
     introRequests,
     totalUnread,
     pendingIntros,
+    isStreaming,
     getMessages,
     loadMessages,
     sendMessage,
     sendAIMessage,
+    cancelStreaming,
     toggleReaction,
     acceptIntro,
     declineIntro,
