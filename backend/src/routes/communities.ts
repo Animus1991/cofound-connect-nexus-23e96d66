@@ -17,7 +17,7 @@ communitiesRoutes.use("*", authMiddleware);
 
 communitiesRoutes.get("/", (c) => {
   const userId = c.get("userId");
-  const all = db.select().from(communities).where(eq(communities.isPrivate, false)).all();
+  const all = db.select().from(communities).where(eq(communities.isPublic, true)).all();
 
   const myMemberships = db.select({ communityId: communityMemberships.communityId })
     .from(communityMemberships).where(eq(communityMemberships.userId, userId)).all();
@@ -39,7 +39,7 @@ const createSchema = z.object({
   description: z.string().max(2000).optional(),
   category: z.string().max(50).optional(),
   tags: z.array(z.string()).max(10).optional(),
-  isPrivate: z.boolean().optional(),
+  isPublic: z.boolean().optional(),
 });
 
 communitiesRoutes.post("/", async (c) => {
@@ -48,16 +48,17 @@ communitiesRoutes.post("/", async (c) => {
   const parse = createSchema.safeParse(body);
   if (!parse.success) return c.json({ error: "Validation failed", details: parse.error.flatten() }, 400);
 
-  const { tags = [], ...rest } = parse.data;
+  const { tags = [], isPublic = true, ...rest } = parse.data;
   const community = db.insert(communities).values({
     ownerId: userId,
     tags: JSON.stringify(tags),
+    isPublic,
     ...rest,
   }).returning().get();
 
   // Owner auto-joins as owner
   db.insert(communityMemberships).values({ communityId: community.id, userId, role: "owner" }).run();
-  db.update(communities).set({ membersCount: 1 }).where(eq(communities.id, community.id)).run();
+  db.update(communities).set({ memberCount: 1 }).where(eq(communities.id, community.id)).run();
 
   logActivity(userId, "community_created", { communityId: community.id });
   return c.json({ community: { ...community, tags } }, 201);
@@ -114,7 +115,7 @@ communitiesRoutes.post("/:id/join", (c) => {
   if (existing) return c.json({ error: "Already a member" }, 409);
 
   db.insert(communityMemberships).values({ communityId, userId, role: "member" }).run();
-  db.update(communities).set({ membersCount: (community.membersCount ?? 0) + 1 }).where(eq(communities.id, communityId)).run();
+  db.update(communities).set({ memberCount: (community.memberCount ?? 0) + 1 }).where(eq(communities.id, communityId)).run();
   logActivity(userId, "community_joined", { communityId });
 
   return c.json({ ok: true });
@@ -132,8 +133,8 @@ communitiesRoutes.post("/:id/leave", (c) => {
 
   db.delete(communityMemberships)
     .where(and(eq(communityMemberships.communityId, communityId), eq(communityMemberships.userId, userId))).run();
-  const current = community.membersCount ?? 1;
-  db.update(communities).set({ membersCount: Math.max(0, current - 1) }).where(eq(communities.id, communityId)).run();
+  const current = community.memberCount ?? 1;
+  db.update(communities).set({ memberCount: Math.max(0, current - 1) }).where(eq(communities.id, communityId)).run();
 
   return c.json({ ok: true });
 });
@@ -163,7 +164,6 @@ communitiesRoutes.get("/:id/posts", (c) => {
   return c.json({
     posts: posts.map((p) => ({
       ...p,
-      tags: JSON.parse(p.tags),
       author: { id: p.authorId, name: authorMap.get(p.authorId)?.name ?? "Unknown" },
     })),
     page,
@@ -174,9 +174,9 @@ communitiesRoutes.get("/:id/posts", (c) => {
 // ── POST /api/communities/:id/posts ─────────────────────────────────────────
 
 const postSchema = z.object({
-  title: z.string().min(2).max(200),
-  body: z.string().min(1).max(10000),
-  tags: z.array(z.string()).max(8).optional(),
+  title: z.string().max(200).optional(),
+  content: z.string().min(1).max(10000),
+  type: z.enum(["post", "question", "announcement"]).optional(),
 });
 
 communitiesRoutes.post("/:id/posts", async (c) => {
@@ -194,21 +194,21 @@ communitiesRoutes.post("/:id/posts", async (c) => {
   const parse = postSchema.safeParse(body);
   if (!parse.success) return c.json({ error: "Validation failed", details: parse.error.flatten() }, 400);
 
-  const { tags = [], ...rest } = parse.data;
   const post = db.insert(communityPosts).values({
     communityId,
     authorId: userId,
-    tags: JSON.stringify(tags),
-    ...rest,
+    title: parse.data.title,
+    content: parse.data.content,
+    type: parse.data.type ?? "post",
   }).returning().get();
 
-  db.update(communities).set({ postsCount: (community.postsCount ?? 0) + 1 }).where(eq(communities.id, communityId)).run();
+  db.update(communities).set({ postCount: (community.postCount ?? 0) + 1 }).where(eq(communities.id, communityId)).run();
   logActivity(userId, "post_created", { communityId, postId: post.id });
 
   const author = db.select({ name: users.name }).from(users).where(eq(users.id, userId)).get();
 
   return c.json({
-    post: { ...post, tags, author: { id: userId, name: author?.name ?? "Unknown" } },
+    post: { ...post, author: { id: userId, name: author?.name ?? "Unknown" } },
   }, 201);
 });
 
@@ -233,7 +233,6 @@ communitiesRoutes.get("/:id/posts/:postId", (c) => {
   return c.json({
     post: {
       ...post,
-      tags: JSON.parse(post.tags),
       author: { id: post.authorId, name: userMap.get(post.authorId)?.name ?? "Unknown" },
     },
     comments: comments.map((c) => ({
@@ -246,8 +245,7 @@ communitiesRoutes.get("/:id/posts/:postId", (c) => {
 // ── POST /api/communities/:id/posts/:postId/comments ─────────────────────────
 
 const commentSchema = z.object({
-  body: z.string().min(1).max(5000),
-  parentId: z.string().uuid().optional(),
+  content: z.string().min(1).max(5000),
 });
 
 communitiesRoutes.post("/:id/posts/:postId/comments", async (c) => {
@@ -264,11 +262,10 @@ communitiesRoutes.post("/:id/posts/:postId/comments", async (c) => {
   const comment = db.insert(communityPostComments).values({
     postId,
     authorId: userId,
-    body: parse.data.body,
-    parentId: parse.data.parentId,
+    content: parse.data.content,
   }).returning().get();
 
-  db.update(communityPosts).set({ commentsCount: (post.commentsCount ?? 0) + 1 }).where(eq(communityPosts.id, postId)).run();
+  db.update(communityPosts).set({ commentCount: (post.commentCount ?? 0) + 1 }).where(eq(communityPosts.id, postId)).run();
 
   const author = db.select({ name: users.name }).from(users).where(eq(users.id, userId)).get();
   return c.json({ comment: { ...comment, author: { id: userId, name: author?.name ?? "Unknown" } } }, 201);

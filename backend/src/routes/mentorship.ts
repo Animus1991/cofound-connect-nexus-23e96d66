@@ -20,24 +20,24 @@ mentorshipRoutes.get("/", (c) => {
   const availability = c.req.query("availability");
 
   let mentors = db.select().from(mentorAvailability)
-    .where(and(eq(mentorAvailability.isPublic, true), ne(mentorAvailability.userId, userId)))
+    .where(and(eq(mentorAvailability.isAvailable, true), ne(mentorAvailability.userId, userId)))
     .all();
 
   // Soft filters (post-fetch since SQLite JSON arrays need JS parsing)
   if (expertise) {
     mentors = mentors.filter((m) => {
-      const areas: string[] = JSON.parse(m.expertiseAreas);
+      const areas: string[] = JSON.parse(m.expertise);
       return areas.some((a) => a.toLowerCase().includes(expertise.toLowerCase()));
     });
   }
   if (stage) {
     mentors = mentors.filter((m) => {
-      const stages: string[] = JSON.parse(m.stagesServed);
-      return stages.includes(stage);
+      const industries: string[] = JSON.parse(m.industries);
+      return industries.some((i) => i.toLowerCase().includes(stage.toLowerCase()));
     });
   }
-  if (availability) {
-    mentors = mentors.filter((m) => m.availabilityStatus === availability);
+  if (availability === "closed") {
+    mentors = mentors.filter((m) => !m.isAvailable);
   }
 
   const mentorIds = mentors.map((m) => m.userId);
@@ -60,9 +60,9 @@ mentorshipRoutes.get("/", (c) => {
   return c.json({
     mentors: mentors.map((m) => ({
       ...m,
-      expertiseAreas: JSON.parse(m.expertiseAreas),
-      stagesServed: JSON.parse(m.stagesServed),
+      expertise: JSON.parse(m.expertise),
       industries: JSON.parse(m.industries),
+      sessionTypes: JSON.parse(m.sessionTypes),
       name: userMap.get(m.userId)?.name ?? "Unknown",
       headline: profileMap.get(m.userId)?.headline ?? null,
       location: profileMap.get(m.userId)?.location ?? null,
@@ -80,9 +80,9 @@ mentorshipRoutes.get("/mine", (c) => {
   return c.json({
     mentor: {
       ...mentor,
-      expertiseAreas: JSON.parse(mentor.expertiseAreas),
-      stagesServed: JSON.parse(mentor.stagesServed),
+      expertise: JSON.parse(mentor.expertise),
       industries: JSON.parse(mentor.industries),
+      sessionTypes: JSON.parse(mentor.sessionTypes),
     },
   });
 });
@@ -90,18 +90,15 @@ mentorshipRoutes.get("/mine", (c) => {
 // ── PUT /api/mentorship/mine — upsert mentor availability ─────────────────────
 
 const mentorSchema = z.object({
-  expertiseAreas: z.array(z.string()).optional(),
-  stagesServed: z.array(z.string()).optional(),
-  availabilityStatus: z.enum(["open", "limited", "closed"]).optional(),
-  sessionFormat: z.enum(["1-on-1", "group", "async"]).optional(),
-  sessionFrequency: z.enum(["weekly", "bi-weekly", "monthly"]).optional(),
+  expertise: z.array(z.string()).optional(),
+  industries: z.array(z.string()).optional(),
+  sessionTypes: z.array(z.string()).optional(),
+  isAvailable: z.boolean().optional(),
   maxMentees: z.number().int().min(0).max(20).optional(),
   hourlyRate: z.number().int().min(0).nullable().optional(),
   currency: z.string().optional(),
+  timezone: z.string().optional(),
   bio: z.string().max(2000).optional(),
-  linkedinUrl: z.string().url().optional().or(z.literal("")),
-  industries: z.array(z.string()).optional(),
-  isPublic: z.boolean().optional(),
 });
 
 mentorshipRoutes.put("/mine", async (c) => {
@@ -114,39 +111,31 @@ mentorshipRoutes.put("/mine", async (c) => {
   const existing = db.select({ id: mentorAvailability.id }).from(mentorAvailability)
     .where(eq(mentorAvailability.userId, userId)).get();
 
-  const payload = {
-    ...(d.expertiseAreas !== undefined ? { expertiseAreas: JSON.stringify(d.expertiseAreas) } : {}),
-    ...(d.stagesServed !== undefined ? { stagesServed: JSON.stringify(d.stagesServed) } : {}),
-    ...(d.industries !== undefined ? { industries: JSON.stringify(d.industries) } : {}),
-    ...(d.availabilityStatus !== undefined ? { availabilityStatus: d.availabilityStatus } : {}),
-    ...(d.sessionFormat !== undefined ? { sessionFormat: d.sessionFormat } : {}),
-    ...(d.sessionFrequency !== undefined ? { sessionFrequency: d.sessionFrequency } : {}),
-    ...(d.maxMentees !== undefined ? { maxMentees: d.maxMentees } : {}),
-    ...(d.hourlyRate !== undefined ? { hourlyRate: d.hourlyRate } : {}),
-    ...(d.currency !== undefined ? { currency: d.currency } : {}),
-    ...(d.bio !== undefined ? { bio: d.bio } : {}),
-    ...(d.linkedinUrl !== undefined ? { linkedinUrl: d.linkedinUrl } : {}),
-    ...(d.isPublic !== undefined ? { isPublic: d.isPublic } : {}),
-    updatedAt: new Date().toISOString(),
-  };
+  const payload: Record<string, unknown> = { updatedAt: new Date().toISOString() };
+  if (d.expertise !== undefined) payload.expertise = JSON.stringify(d.expertise);
+  if (d.industries !== undefined) payload.industries = JSON.stringify(d.industries);
+  if (d.sessionTypes !== undefined) payload.sessionTypes = JSON.stringify(d.sessionTypes);
+  if (d.isAvailable !== undefined) payload.isAvailable = d.isAvailable;
+  if (d.maxMentees !== undefined) payload.maxMentees = d.maxMentees;
+  if (d.hourlyRate !== undefined) payload.hourlyRate = d.hourlyRate;
+  if (d.currency !== undefined) payload.currency = d.currency;
+  if (d.timezone !== undefined) payload.timezone = d.timezone;
+  if (d.bio !== undefined) payload.bio = d.bio;
 
   if (existing) {
     db.update(mentorAvailability).set(payload).where(eq(mentorAvailability.userId, userId)).run();
   } else {
     db.insert(mentorAvailability).values({
       userId,
-      expertiseAreas: JSON.stringify(d.expertiseAreas ?? []),
-      stagesServed: JSON.stringify(d.stagesServed ?? []),
+      expertise: JSON.stringify(d.expertise ?? []),
       industries: JSON.stringify(d.industries ?? []),
-      availabilityStatus: d.availabilityStatus ?? "open",
-      sessionFormat: d.sessionFormat ?? "1-on-1",
-      sessionFrequency: d.sessionFrequency ?? "monthly",
-      maxMentees: d.maxMentees ?? 3,
+      sessionTypes: JSON.stringify(d.sessionTypes ?? []),
+      isAvailable: d.isAvailable ?? true,
+      maxMentees: d.maxMentees ?? 5,
       hourlyRate: d.hourlyRate ?? null,
       currency: d.currency ?? "USD",
+      timezone: d.timezone,
       bio: d.bio,
-      linkedinUrl: d.linkedinUrl,
-      isPublic: d.isPublic ?? true,
     }).run();
   }
 
@@ -154,9 +143,9 @@ mentorshipRoutes.put("/mine", async (c) => {
   return c.json({
     mentor: updated ? {
       ...updated,
-      expertiseAreas: JSON.parse(updated.expertiseAreas),
-      stagesServed: JSON.parse(updated.stagesServed),
+      expertise: JSON.parse(updated.expertise),
       industries: JSON.parse(updated.industries),
+      sessionTypes: JSON.parse(updated.sessionTypes),
     } : null,
   });
 });

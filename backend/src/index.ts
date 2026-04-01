@@ -21,6 +21,11 @@ import { activityRoutes } from "./routes/activity.js";
 import { searchRoutes } from "./routes/search.js";
 import { ensureIndexes } from "./lib/search.js";
 import { oauthRoutes } from "./routes/oauth.js";
+import { matchesRoutes } from "./routes/matches.js";
+import { communitiesRoutes } from "./routes/communities.js";
+import { mentorshipRoutes } from "./routes/mentorship.js";
+import { adminRoutes } from "./routes/admin.js";
+import { milestonesRoutes } from "./routes/milestones.js";
 
 const PORT = parseInt(process.env.PORT ?? "3001", 10);
 
@@ -80,6 +85,11 @@ app.route("/api/startups", startupsRoutes);
 app.route("/api/activity", activityRoutes);
 app.route("/api/search", searchRoutes);
 app.route("/api/auth", oauthRoutes);
+app.route("/api/matches", matchesRoutes);
+app.route("/api/communities", communitiesRoutes);
+app.route("/api/mentorship", mentorshipRoutes);
+app.route("/api/admin", adminRoutes);
+app.route("/api/milestones", milestonesRoutes);
 
 // ── 404 fallback ─────────────────────────────────────────────────────────────
 app.notFound((c) => c.json({ error: "Not found" }, 404));

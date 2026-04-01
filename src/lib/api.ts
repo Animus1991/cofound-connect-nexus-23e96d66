@@ -201,6 +201,8 @@ export const api = {
         method: "PUT",
         body: JSON.stringify(body),
       }),
+    getById: (userId: string) =>
+      request<{ profile: { id: string; userId: string; name: string | null; email: string; headline: string | null; bio: string | null; location: string | null; availability: string | null; stage: string | null; commitment: string | null; skills: string[]; interests: string[]; linkedin: string | null; github: string | null; website: string | null } }>(`/api/profiles/${userId}`),
   },
   settings: {
     getMe: () => request<SettingsData>("/api/settings/me"),
@@ -356,5 +358,138 @@ export const api = {
         users: Array<{ id: string; name: string; headline: string; skills: string; location: string; stage: string; score: number }>;
         opportunities: Array<{ id: string; title: string; description: string; skills: string; type: string; stage: string; location: string; orgName: string; score: number }>;
       }>(`/api/search?q=${encodeURIComponent(q)}&type=${type}&limit=${limit}`),
+  },
+  milestones: {
+    list: (status?: string) => {
+      const q = status && status !== "all" ? `?status=${encodeURIComponent(status)}` : "";
+      return request<{ milestones: Array<{ id: string; userId: string; title: string; category: string; status: string; targetDate: string | null; notes: string | null; progress: number; sortOrder: number; createdAt: string; updatedAt: string }> }>(`/api/milestones${q}`);
+    },
+    create: (body: { title: string; category?: string; status?: string; targetDate?: string; notes?: string; progress?: number }) =>
+      request<{ milestone: { id: string; title: string; status: string; category: string } }>("/api/milestones", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    update: (id: string, body: { title?: string; category?: string; status?: string; targetDate?: string | null; notes?: string | null; progress?: number; sortOrder?: number }) =>
+      request<{ milestone: { id: string; title: string; status: string; progress: number } }>(`/api/milestones/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      }),
+    delete: (id: string) =>
+      request<{ success: boolean }>(`/api/milestones/${id}`, { method: "DELETE" }),
+  },
+  matches: {
+    list: (params?: { page?: number; limit?: number; role?: string; industry?: string; stage?: string; commitment?: string }) => {
+      const q = new URLSearchParams();
+      if (params?.page) q.set("page", String(params.page));
+      if (params?.limit) q.set("limit", String(params.limit));
+      if (params?.role) q.set("role", params.role);
+      if (params?.industry) q.set("industry", params.industry);
+      if (params?.stage) q.set("stage", params.stage);
+      if (params?.commitment) q.set("commitment", params.commitment);
+      const qs = q.toString();
+      return request<{ matches: Array<{ userId: string; name: string; headline: string | null; location: string | null; skills: string[]; role: string | null; stage: string | null; commitment: string | null; score: number; sharedStrengths: string[]; complementaryStrengths: string[]; mismatches: string[]; dimensions: Record<string, number> }>; total: number; page: number; limit: number }>(`/api/matches${qs ? `?${qs}` : ""}`);
+    },
+    getPreferences: () =>
+      request<{ preferences: { lookingForRoles: string[]; preferredIndustries: string[]; preferredStages: string[]; preferredCommitment: string[]; desiredSkills: string[]; remoteOnly: boolean; locationRadius: number } | null }>("/api/matches/preferences"),
+    updatePreferences: (body: { lookingForRoles?: string[]; preferredIndustries?: string[]; preferredStages?: string[]; preferredCommitment?: string[]; desiredSkills?: string[]; remoteOnly?: boolean; locationRadius?: number }) =>
+      request<{ preferences: Record<string, unknown> }>("/api/matches/preferences", {
+        method: "PUT",
+        body: JSON.stringify(body),
+      }),
+  },
+  communities: {
+    list: (params?: { search?: string; category?: string; access?: string }) => {
+      const q = new URLSearchParams();
+      if (params?.search) q.set("search", params.search);
+      if (params?.category) q.set("category", params.category);
+      if (params?.access) q.set("access", params.access);
+      const qs = q.toString();
+      return request<{ communities: Array<{ id: string; title: string; description: string | null; category: string; tags: string[]; isPublic: boolean; memberCount: number; postCount: number; isMember: boolean; createdAt: string }> }>(`/api/communities${qs ? `?${qs}` : ""}`);
+    },
+    get: (id: string) =>
+      request<{ community: { id: string; title: string; description: string | null; category: string; tags: string[]; isPublic: boolean; memberCount: number; postCount: number; isMember: boolean; createdAt: string } }>(`/api/communities/${id}`),
+    create: (body: { title: string; description?: string; category?: string; tags?: string[]; isPublic?: boolean }) =>
+      request<{ community: { id: string; title: string } }>("/api/communities", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    join: (id: string) =>
+      request<{ ok: boolean }>(`/api/communities/${id}/join`, { method: "POST" }),
+    leave: (id: string) =>
+      request<{ ok: boolean }>(`/api/communities/${id}/leave`, { method: "POST" }),
+    getPosts: (id: string, page = 1) =>
+      request<{ posts: Array<{ id: string; title: string; body: string; tags: string[]; authorId: string; authorName: string | null; isPinned: boolean; reactionsCount: number; commentsCount: number; createdAt: string }>; total: number }>(`/api/communities/${id}/posts?page=${page}`),
+    createPost: (communityId: string, body: { title: string; body: string; tags?: string[] }) =>
+      request<{ post: { id: string; title: string } }>(`/api/communities/${communityId}/posts`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    getPost: (communityId: string, postId: string) =>
+      request<{ post: { id: string; title: string; body: string; tags: string[]; authorId: string; authorName: string | null; isPinned: boolean; reactionsCount: number; commentsCount: number; createdAt: string }; comments: Array<{ id: string; body: string; authorId: string; authorName: string | null; parentId: string | null; reactionsCount: number; createdAt: string }> }>(`/api/communities/${communityId}/posts/${postId}`),
+    createComment: (communityId: string, postId: string, body: { body: string; parentId?: string }) =>
+      request<{ comment: { id: string; body: string } }>(`/api/communities/${communityId}/posts/${postId}/comments`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+  },
+  mentorship: {
+    list: (params?: { expertise?: string; stage?: string; available?: boolean }) => {
+      const q = new URLSearchParams();
+      if (params?.expertise) q.set("expertise", params.expertise);
+      if (params?.stage) q.set("stage", params.stage);
+      if (params?.available) q.set("available", "true");
+      const qs = q.toString();
+      return request<{ mentors: Array<{ userId: string; name: string | null; headline: string | null; location: string | null; skills: string[]; expertise: string[]; startupStages: string[]; availability: string; sessionFormat: string[]; sessionFrequency: string; maxMentees: number; currentMentees: number; bio: string | null }> }>(`/api/mentorship${qs ? `?${qs}` : ""}`);
+    },
+    getMine: () =>
+      request<{ availability: { expertise: string[]; startupStages: string[]; availability: string; sessionFormat: string[]; sessionFrequency: string; maxMentees: number; bio: string | null } | null }>("/api/mentorship/mine"),
+    updateMine: (body: { expertise?: string[]; startupStages?: string[]; availability?: string; sessionFormat?: string[]; sessionFrequency?: string; maxMentees?: number; bio?: string }) =>
+      request<{ ok: boolean }>("/api/mentorship/mine", {
+        method: "PUT",
+        body: JSON.stringify(body),
+      }),
+    sendRequest: (body: { mentorId: string; note?: string; goals?: string }) =>
+      request<{ request: { id: string } }>("/api/mentorship/requests", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    getRequests: () =>
+      request<{ sent: Array<{ id: string; mentorId: string; mentorName: string | null; note: string | null; goals: string | null; status: string; createdAt: string }>; received: Array<{ id: string; menteeId: string; menteeName: string | null; note: string | null; goals: string | null; status: string; createdAt: string }> }>("/api/mentorship/requests"),
+    updateRequest: (id: string, status: "accepted" | "declined") =>
+      request<{ ok: boolean }>(`/api/mentorship/requests/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      }),
+  },
+  admin: {
+    getStats: () =>
+      request<{ stats: { totalUsers: number; activeUsers: number; completedProfiles: number; totalConnections: number; totalMessages: number; totalOpportunities: number; totalCommunities: number; totalMentorshipRequests: number; totalOrganizations: number } }>("/api/admin/stats"),
+    getUsers: (params?: { search?: string; role?: string; status?: string; page?: number }) => {
+      const q = new URLSearchParams();
+      if (params?.search) q.set("search", params.search);
+      if (params?.role) q.set("role", params.role);
+      if (params?.status) q.set("status", params.status);
+      if (params?.page) q.set("page", String(params.page));
+      const qs = q.toString();
+      return request<{ users: Array<{ id: string; email: string; name: string | null; role: string; status: string; createdAt: string; profileComplete: boolean }>; total: number }>(`/api/admin/users${qs ? `?${qs}` : ""}`);
+    },
+    getActivity: (limit?: number) =>
+      request<{ activity: Array<{ id: string; userId: string; userName: string | null; action: string; createdAt: string }> }>(`/api/admin/activity${limit ? `?limit=${limit}` : ""}`),
+    getCommunities: () =>
+      request<{ communities: Array<{ id: string; title: string; category: string; memberCount: number; postCount: number; isPublic: boolean; createdAt: string }> }>("/api/admin/communities"),
+    getOrganizations: () =>
+      request<{ organizations: Array<{ id: string; name: string; type: string; status: string; country: string | null; createdAt: string }> }>("/api/admin/organizations"),
+    createOrganization: (body: { name: string; type?: string; description?: string; country?: string; websiteUrl?: string }) =>
+      request<{ organization: { id: string; name: string } }>("/api/admin/organizations", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    getTenants: () =>
+      request<{ tenants: Array<{ id: string; name: string; slug: string; status: string; createdAt: string }> }>("/api/admin/tenants"),
+    createTenant: (body: { name: string; slug: string; organizationId?: string }) =>
+      request<{ tenant: { id: string; name: string; slug: string } }>("/api/admin/tenants", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
   },
 };

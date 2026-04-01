@@ -22,10 +22,12 @@ import {
   Zap,
   X,
   Building2,
+  Sparkles,
 } from "lucide-react";
 
 const navItems = [
   { icon: Home, label: "Dashboard", path: "/dashboard" },
+  { icon: Sparkles, label: "Matches", path: "/matches" },
   { icon: Search, label: "Discover", path: "/discover" },
   { icon: MessageSquare, label: "Messages", path: "/messages" },
   { icon: GraduationCap, label: "Mentors", path: "/mentors" },

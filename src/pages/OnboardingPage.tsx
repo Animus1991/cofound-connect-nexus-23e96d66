@@ -28,9 +28,19 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 
 const STEPS = [
+  { label: "Role", icon: Rocket },
   { label: "Profile", icon: User },
   { label: "Preferences", icon: Target },
   { label: "Connections", icon: Users },
+];
+
+const ROLE_OPTIONS = [
+  { value: "founder", label: "Founder", desc: "I have an idea/startup and need a team", icon: Rocket, color: "bg-primary/10 border-primary/30 text-primary" },
+  { value: "cofounder", label: "Co-Founder", desc: "Looking to join or partner with a founder", icon: Users, color: "bg-accent/10 border-accent/30 text-accent" },
+  { value: "mentor", label: "Mentor", desc: "I want to guide and advise early-stage startups", icon: Target, color: "bg-blue-500/10 border-blue-500/30 text-blue-600" },
+  { value: "advisor", label: "Advisor", desc: "Strategic advisor with domain expertise", icon: Sparkles, color: "bg-purple-500/10 border-purple-500/30 text-purple-600" },
+  { value: "investor", label: "Investor", desc: "I invest in or fund early-stage startups", icon: Zap, color: "bg-orange-500/10 border-orange-500/30 text-orange-600" },
+  { value: "developer", label: "Developer", desc: "Engineer or technical builder for hire/co-found", icon: Globe, color: "bg-green-500/10 border-green-500/30 text-green-600" },
 ];
 
 const skillOptions = [
@@ -73,6 +83,9 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Step 0: Role
+  const [selectedRole, setSelectedRole] = useState("");
+
   // Step 1: Profile
   const [name, setName] = useState(user?.name ?? "");
   const [headline, setHeadline] = useState("");
@@ -98,8 +111,9 @@ export default function OnboardingPage() {
     setConnectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
   const canNext =
-    step === 0 ? name.trim().length > 0 :
-    step === 1 ? selectedInterests.length > 0 :
+    step === 0 ? selectedRole.length > 0 :
+    step === 1 ? name.trim().length > 0 :
+    step === 2 ? selectedInterests.length > 0 :
     true;
 
   const handleFinish = async () => {
@@ -107,13 +121,14 @@ export default function OnboardingPage() {
     try {
       await api.profiles.updateMe({
         name: name.trim() || undefined,
-        headline: headline.trim() || undefined,
+        headline: headline.trim() || (selectedRole ? `${selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)} at Stealth Startup` : undefined),
         location: location.trim() || undefined,
         bio: bio.trim() || undefined,
         skills: selectedSkills,
         interests: selectedInterests,
         stage: stage || undefined,
         commitment: commitment || undefined,
+        lookingFor: selectedRole || undefined,
       });
     } catch {
       // Profile save failed — continue to dashboard anyway (non-blocking)
@@ -181,6 +196,51 @@ export default function OnboardingPage() {
               <div className="space-y-6">
                 <div>
                   <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
+                    What best describes you?
+                  </h1>
+                  <p className="mt-1 text-muted-foreground text-sm">
+                    This helps us match you with the most relevant people and opportunities.
+                  </p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {ROLE_OPTIONS.map((opt) => {
+                    const Icon = opt.icon;
+                    const isSelected = selectedRole === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() => setSelectedRole(opt.value)}
+                        className={`rounded-xl border-2 p-4 text-left transition-all duration-150 ${
+                          isSelected
+                            ? `${opt.color} border-current`
+                            : "border-border/50 bg-card hover:border-border"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 mb-1.5">
+                          <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${
+                            isSelected ? "bg-current/10" : "bg-secondary"
+                          }`}>
+                            <Icon className={`h-3.5 w-3.5 ${isSelected ? "" : "text-muted-foreground"}`} />
+                          </div>
+                          <span className={`text-sm font-semibold ${
+                            isSelected ? "" : "text-foreground"
+                          }`}>{opt.label}</span>
+                          {isSelected && <Check className="h-3.5 w-3.5 ml-auto" />}
+                        </div>
+                        <p className={`text-xs leading-relaxed ${
+                          isSelected ? "opacity-80" : "text-muted-foreground"
+                        }`}>{opt.desc}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {step === 1 && (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
                     Let's set up your profile
                   </h1>
                   <p className="mt-1 text-muted-foreground text-sm">
@@ -243,7 +303,7 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {step === 1 && (
+            {step === 2 && (
               <div className="space-y-6">
                 <div>
                   <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
@@ -315,7 +375,7 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {step === 2 && (
+            {step === 3 && (
               <div className="space-y-6">
                 <div>
                   <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">

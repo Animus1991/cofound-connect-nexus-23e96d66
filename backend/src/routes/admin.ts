@@ -140,12 +140,12 @@ adminRoutes.get("/communities", (c) => {
 
 const orgSchema = z.object({
   name: z.string().min(2).max(200),
-  type: z.enum(["incubator", "accelerator", "university", "hub", "cluster", "public_body", "corporate"]),
+  slug: z.string().min(2).max(100).regex(/^[a-z0-9-]+$/),
+  type: z.enum(["accelerator", "vc", "incubator", "corporate", "community"]),
   description: z.string().max(2000).optional(),
   logoUrl: z.string().url().optional().or(z.literal("")),
   websiteUrl: z.string().url().optional().or(z.literal("")),
-  country: z.string().max(100).optional(),
-  city: z.string().max(100).optional(),
+  plan: z.enum(["free", "pro", "enterprise"]).optional(),
 });
 
 adminRoutes.get("/organizations", (c) => {
@@ -154,10 +154,11 @@ adminRoutes.get("/organizations", (c) => {
 });
 
 adminRoutes.post("/organizations", async (c) => {
+  const userId = c.get("userId");
   const body = await c.req.json().catch(() => ({}));
   const parse = orgSchema.safeParse(body);
   if (!parse.success) return c.json({ error: "Validation failed", details: parse.error.flatten() }, 400);
-  const org = db.insert(organizations).values(parse.data).returning().get();
+  const org = db.insert(organizations).values({ ...parse.data, ownerId: userId }).returning().get();
   return c.json({ organization: org }, 201);
 });
 
@@ -175,12 +176,11 @@ adminRoutes.patch("/organizations/:id", async (c) => {
 // ── Tenants (scaffold) ────────────────────────────────────────────────────────
 
 const tenantSchema = z.object({
-  name: z.string().min(2).max(200),
-  slug: z.string().min(2).max(100).regex(/^[a-z0-9-]+$/),
-  organizationId: z.string().uuid().optional(),
-  status: z.enum(["active", "suspended", "trial"]).optional(),
-  branding: z.record(z.unknown()).optional(),
-  config: z.record(z.unknown()).optional(),
+  organizationId: z.string().uuid(),
+  domain: z.string().max(200).optional(),
+  customBranding: z.record(z.unknown()).optional(),
+  features: z.array(z.string()).optional(),
+  maxSeats: z.number().int().min(1).optional(),
 });
 
 adminRoutes.get("/tenants", (c) => {
@@ -188,8 +188,8 @@ adminRoutes.get("/tenants", (c) => {
   return c.json({
     tenants: all.map((t) => ({
       ...t,
-      branding: JSON.parse(t.branding),
-      config: JSON.parse(t.config),
+      customBranding: JSON.parse(t.customBranding),
+      features: JSON.parse(t.features),
     })),
   });
 });
@@ -198,11 +198,11 @@ adminRoutes.post("/tenants", async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const parse = tenantSchema.safeParse(body);
   if (!parse.success) return c.json({ error: "Validation failed", details: parse.error.flatten() }, 400);
-  const { branding, config, ...rest } = parse.data;
+  const { customBranding, features, ...rest } = parse.data;
   const tenant = db.insert(tenants).values({
     ...rest,
-    branding: JSON.stringify(branding ?? {}),
-    config: JSON.stringify(config ?? {}),
+    customBranding: JSON.stringify(customBranding ?? {}),
+    features: JSON.stringify(features ?? []),
   }).returning().get();
   return c.json({ tenant }, 201);
 });

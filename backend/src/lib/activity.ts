@@ -16,7 +16,13 @@ type Action =
   | "application_sent"
   | "message_sent"
   | "startup_created"
-  | "startup_updated";
+  | "startup_updated"
+  | "milestone_created"
+  | "community_created"
+  | "community_joined"
+  | "post_created"
+  | "mentorship_requested"
+  | "match_accepted";
 
 export function logActivity(
   userId: string,

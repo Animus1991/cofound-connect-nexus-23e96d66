@@ -115,17 +115,17 @@ function workStyleScore(my: string | null | undefined, their: string | null | un
 
 function computeScore(
   myProfile: { skills: string; interests: string; stage?: string | null; commitment?: string | null },
-  myPrefs: { lookingForRoles: string; desiredSkills: string; preferredIndustries: string; preferredStage?: string | null; preferredCommitment?: string | null; workLocationPreference: string; geographicOpenness: string; workStyle?: string | null } | null,
+  myPrefs: { lookingForRoles: string; preferredSkills: string; preferredIndustries: string; preferredStage?: string | null; preferredCommitment?: string | null; preferredLocation?: string | null; remoteOk?: boolean; workStyle?: string | null } | null,
   theirProfile: { skills: string; interests: string; stage?: string | null; commitment?: string | null },
-  theirPrefs: { lookingForRoles: string; desiredSkills: string; preferredIndustries: string; preferredStage?: string | null; preferredCommitment?: string | null; workLocationPreference: string; geographicOpenness: string; workStyle?: string | null } | null,
+  theirPrefs: { lookingForRoles: string; preferredSkills: string; preferredIndustries: string; preferredStage?: string | null; preferredCommitment?: string | null; preferredLocation?: string | null; remoteOk?: boolean; workStyle?: string | null } | null,
 ): { overall: number; dimensions: DimensionScores; explanation: string; sharedStrengths: string[]; complementaryStrengths: string[]; mismatches: string[] } {
   const mySkills = parseJson<string[]>(myProfile.skills, []);
   const myInterests = parseJson<string[]>(myProfile.interests, []);
   const theirSkills = parseJson<string[]>(theirProfile.skills, []);
   const theirInterests = parseJson<string[]>(theirProfile.interests, []);
 
-  const myDesiredSkills = parseJson<string[]>(myPrefs?.desiredSkills ?? "[]", []);
-  const theirDesiredSkills = parseJson<string[]>(theirPrefs?.desiredSkills ?? "[]", []);
+  const myDesiredSkills = parseJson<string[]>(myPrefs?.preferredSkills ?? "[]", []);
+  const theirDesiredSkills = parseJson<string[]>(theirPrefs?.preferredSkills ?? "[]", []);
   const myLookingFor = parseJson<string[]>(myPrefs?.lookingForRoles ?? "[]", []);
   const myPrefIndustries = parseJson<string[]>(myPrefs?.preferredIndustries ?? "[]", []);
   const theirPrefIndustries = parseJson<string[]>(theirPrefs?.preferredIndustries ?? "[]", []);
@@ -137,10 +137,10 @@ function computeScore(
     stage: stageScore(myPrefs?.preferredStage ?? myProfile.stage, theirProfile.stage),
     commitment: commitmentScore(myPrefs?.preferredCommitment ?? myProfile.commitment, theirProfile.commitment),
     location: locationScore(
-      myPrefs?.workLocationPreference ?? "remote",
-      theirPrefs?.workLocationPreference ?? "remote",
-      myPrefs?.geographicOpenness ?? "global",
-      theirPrefs?.geographicOpenness ?? "global",
+      myPrefs?.remoteOk !== false ? "remote" : (myPrefs?.preferredLocation ?? "remote"),
+      theirPrefs?.remoteOk !== false ? "remote" : (theirPrefs?.preferredLocation ?? "remote"),
+      "global",
+      "global",
     ),
     workStyle: workStyleScore(myPrefs?.workStyle, theirPrefs?.workStyle),
   };
@@ -304,16 +304,12 @@ matchesRoutes.get("/preferences", (c) => {
 
 const prefsSchema = z.object({
   lookingForRoles: z.array(z.string()).optional(),
-  desiredSkills: z.array(z.string()).optional(),
+  preferredSkills: z.array(z.string()).optional(),
   preferredIndustries: z.array(z.string()).optional(),
   preferredStage: z.string().optional(),
   preferredCommitment: z.string().optional(),
-  workLocationPreference: z.enum(["remote", "hybrid", "onsite"]).optional(),
-  geographicOpenness: z.enum(["local", "regional", "global"]).optional(),
-  workStyle: z.string().optional(),
-  riskTolerance: z.string().optional(),
-  missionOrientation: z.string().optional(),
-  visibleInFeed: z.boolean().optional(),
+  preferredLocation: z.string().optional(),
+  remoteOk: z.boolean().optional(),
 });
 
 matchesRoutes.put("/preferences", async (c) => {
@@ -328,32 +324,24 @@ matchesRoutes.put("/preferences", async (c) => {
   if (existing) {
     db.update(matchPreferences).set({
       ...(d.lookingForRoles !== undefined ? { lookingForRoles: JSON.stringify(d.lookingForRoles) } : {}),
-      ...(d.desiredSkills !== undefined ? { desiredSkills: JSON.stringify(d.desiredSkills) } : {}),
+      ...(d.preferredSkills !== undefined ? { preferredSkills: JSON.stringify(d.preferredSkills) } : {}),
       ...(d.preferredIndustries !== undefined ? { preferredIndustries: JSON.stringify(d.preferredIndustries) } : {}),
       ...(d.preferredStage !== undefined ? { preferredStage: d.preferredStage } : {}),
       ...(d.preferredCommitment !== undefined ? { preferredCommitment: d.preferredCommitment } : {}),
-      ...(d.workLocationPreference !== undefined ? { workLocationPreference: d.workLocationPreference } : {}),
-      ...(d.geographicOpenness !== undefined ? { geographicOpenness: d.geographicOpenness } : {}),
-      ...(d.workStyle !== undefined ? { workStyle: d.workStyle } : {}),
-      ...(d.riskTolerance !== undefined ? { riskTolerance: d.riskTolerance } : {}),
-      ...(d.missionOrientation !== undefined ? { missionOrientation: d.missionOrientation } : {}),
-      ...(d.visibleInFeed !== undefined ? { visibleInFeed: d.visibleInFeed } : {}),
+      ...(d.preferredLocation !== undefined ? { preferredLocation: d.preferredLocation } : {}),
+      ...(d.remoteOk !== undefined ? { remoteOk: d.remoteOk } : {}),
       updatedAt: new Date().toISOString(),
     }).where(eq(matchPreferences.userId, userId)).run();
   } else {
     db.insert(matchPreferences).values({
       userId,
       lookingForRoles: JSON.stringify(d.lookingForRoles ?? []),
-      desiredSkills: JSON.stringify(d.desiredSkills ?? []),
+      preferredSkills: JSON.stringify(d.preferredSkills ?? []),
       preferredIndustries: JSON.stringify(d.preferredIndustries ?? []),
       preferredStage: d.preferredStage,
       preferredCommitment: d.preferredCommitment,
-      workLocationPreference: d.workLocationPreference ?? "remote",
-      geographicOpenness: d.geographicOpenness ?? "global",
-      workStyle: d.workStyle,
-      riskTolerance: d.riskTolerance,
-      missionOrientation: d.missionOrientation,
-      visibleInFeed: d.visibleInFeed ?? true,
+      preferredLocation: d.preferredLocation,
+      remoteOk: d.remoteOk ?? true,
     }).run();
   }
 

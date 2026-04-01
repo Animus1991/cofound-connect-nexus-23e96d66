@@ -37,6 +37,8 @@ const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const OAuthCallbackPage = lazy(() => import("./pages/OAuthCallbackPage"));
 const StartupPage = lazy(() => import("./pages/StartupPage"));
+const MatchesPage = lazy(() => import("./pages/MatchesPage"));
+const PublicProfilePage = lazy(() => import("./pages/PublicProfilePage"));
 
 function PageLoader() {
   return (
@@ -78,6 +80,8 @@ function AnimatedRoutes() {
         <Route path="/terms" element={<PageTransition><TermsPage /></PageTransition>} />
         <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
         <Route path="/startup" element={<PageTransition><StartupPage /></PageTransition>} />
+        <Route path="/matches" element={<PageTransition><MatchesPage /></PageTransition>} />
+        <Route path="/profile/:id" element={<PageTransition><PublicProfilePage /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>

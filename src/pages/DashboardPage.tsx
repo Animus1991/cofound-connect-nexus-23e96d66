@@ -24,15 +24,18 @@ import {
   Bookmark,
   Rocket,
   ArrowRight,
+  Sparkles,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
-const recentMatches = [
-  { name: "Alex Chen", role: "Founder", score: 92, skills: ["AI/ML", "Python"], online: true },
-  { name: "Maria Santos", role: "Investor", score: 87, skills: ["Fintech", "SaaS"], online: true },
-  { name: "Dimitris P.", role: "Developer", score: 85, skills: ["React", "Node.js"], online: false },
-  { name: "Lena Müller", role: "Designer", score: 81, skills: ["UI/UX", "Figma"], online: false },
+const FALLBACK_MATCHES = [
+  { userId: "m1", name: "Alex Chen", headline: "AI Founder building the future", score: 92, skills: ["AI/ML", "Python"], role: "Founder", stage: "mvp" },
+  { userId: "m2", name: "Maria Santos", headline: "Fintech product lead", score: 87, skills: ["Fintech", "SaaS"], role: "Investor", stage: "early_traction" },
+  { userId: "m3", name: "Dimitris P.", headline: "Full-stack engineer", score: 85, skills: ["React", "Node.js"], role: "Developer", stage: "idea" },
+  { userId: "m4", name: "Lena Müller", headline: "Design systems lead", score: 81, skills: ["UI/UX", "Figma"], role: "Designer", stage: "mvp" },
 ];
+
+type MatchItem = { userId: string; name: string; headline: string | null; score: number; skills: string[]; role: string | null; stage: string | null };
 
 const upcomingEvents = [
   { title: "AI Founders Meetup", date: "Mar 2, 2026", type: "Online", attendees: 45 },
@@ -84,6 +87,7 @@ interface DashboardStats {
   connections: number;
   pendingRequests: number;
   suggestions: number;
+  matchCount: number;
 }
 
 export default function DashboardPage() {
@@ -91,8 +95,9 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const [savedMatches, setSavedMatches] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState<DashboardStats>({ connections: 0, pendingRequests: 0, suggestions: 0 });
+  const [stats, setStats] = useState<DashboardStats>({ connections: 0, pendingRequests: 0, suggestions: 0, matchCount: 0 });
   const [activityItems, setActivityItems] = useState<ActivityItem[]>([]);
+  const [liveMatches, setLiveMatches] = useState<MatchItem[]>([]);
   const completedTodos = todoItems.filter((t) => t.done).length;
 
   useNotifications();
@@ -105,22 +110,29 @@ export default function DashboardPage() {
 
   const loadStats = useCallback(async () => {
     try {
-      const [connsRes, reqsRes, suggestedRes, activityRes] = await Promise.allSettled([
+      const [connsRes, reqsRes, suggestedRes, activityRes, matchesRes] = await Promise.allSettled([
         api.connections.list(),
         api.connections.getRequests(),
         api.connections.getSuggested(),
         api.activity.list(5),
+        api.matches.list({ limit: 4 }),
       ]);
       setStats({
         connections: connsRes.status === "fulfilled" ? connsRes.value.connections.length : 0,
         pendingRequests: reqsRes.status === "fulfilled" ? reqsRes.value.incoming.length : 0,
         suggestions: suggestedRes.status === "fulfilled" ? suggestedRes.value.suggested.length : 0,
+        matchCount: matchesRes.status === "fulfilled" ? matchesRes.value.total : 0,
       });
       if (activityRes.status === "fulfilled") {
         setActivityItems(activityRes.value.activity);
       }
+      if (matchesRes.status === "fulfilled" && matchesRes.value.matches.length > 0) {
+        setLiveMatches(matchesRes.value.matches.slice(0, 4));
+      } else {
+        setLiveMatches(FALLBACK_MATCHES);
+      }
     } catch {
-      // keep zeros — mock values used in display fallback
+      setLiveMatches(FALLBACK_MATCHES);
     } finally {
       setIsLoading(false);
     }
@@ -185,7 +197,7 @@ export default function DashboardPage() {
             <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
               {[
                 { label: "Profile Views", value: "—", change: "Coming soon", icon: TrendingUp },
-                { label: "Matches", value: String(stats.suggestions), change: `${stats.suggestions} suggested`, icon: Zap },
+                { label: "Matches", value: String(stats.matchCount || stats.suggestions), change: stats.matchCount > 0 ? `${stats.matchCount} found` : "Find matches", icon: Sparkles },
                 { label: "Intro Requests", value: String(stats.pendingRequests), change: stats.pendingRequests > 0 ? `${stats.pendingRequests} pending` : "None pending", icon: ArrowUpRight },
                 { label: "Connections", value: String(stats.connections), change: stats.connections > 0 ? `${stats.connections} total` : "Start connecting", icon: Users },
               ].map((stat, i) => (
@@ -207,31 +219,30 @@ export default function DashboardPage() {
               <motion.div {...fade(5)} className="lg:col-span-2 rounded-xl border border-border bg-card p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="font-display text-sm font-semibold text-foreground">Top Matches</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">People most compatible with your profile</p>
+                    <h3 className="font-display text-sm font-semibold text-foreground flex items-center gap-1.5">
+                      <Sparkles className="h-4 w-4 text-primary" /> Top Matches
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">AI-scored compatibility for your profile</p>
                   </div>
-                  <Link to="/discover">
+                  <Link to="/matches">
                     <Button variant="ghost" size="sm" className="text-xs gap-1 text-primary hover:text-primary h-7">
                       View All <ArrowRight className="h-3 w-3" />
                     </Button>
                   </Link>
                 </div>
                 <div className="space-y-1.5">
-                  {recentMatches.map((match) => (
-                    <div key={match.name} className="flex items-center justify-between rounded-lg bg-secondary/40 p-3 transition-colors hover:bg-secondary/60">
+                  {liveMatches.map((match) => (
+                    <div key={match.userId} className="flex items-center justify-between rounded-lg bg-secondary/40 p-3 transition-colors hover:bg-secondary/60">
                       <div className="flex items-center gap-3">
-                        <div className="relative">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
-                            <span className="text-xs font-medium text-primary">{match.name.split(" ").map((n) => n[0]).join("")}</span>
-                          </div>
-                          {match.online && <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-card bg-primary" />}
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+                          <span className="text-xs font-medium text-primary">{(match.name ?? "?").split(" ").map((n) => n[0]).join("").slice(0, 2)}</span>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-foreground">{match.name}</p>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-xs text-muted-foreground">{match.role}</span>
+                            {match.role && <span className="text-xs text-muted-foreground capitalize">{match.role}</span>}
                             <div className="flex gap-1">
-                              {match.skills.map((s) => (
+                              {match.skills.slice(0, 2).map((s) => (
                                 <span key={s} className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-secondary-foreground">{s}</span>
                               ))}
                             </div>
@@ -239,10 +250,10 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button onClick={(e) => { e.stopPropagation(); toggleSave(match.name); }} className="text-muted-foreground hover:text-primary transition-colors">
-                          <Star className={`h-4 w-4 ${savedMatches.includes(match.name) ? "fill-primary text-primary" : ""}`} />
+                        <button onClick={(e) => { e.stopPropagation(); toggleSave(match.userId); }} className="text-muted-foreground hover:text-primary transition-colors">
+                          <Star className={`h-4 w-4 ${savedMatches.includes(match.userId) ? "fill-primary text-primary" : ""}`} />
                         </button>
-                        <span className="text-xs font-semibold text-primary tabular-nums bg-primary/10 px-2 py-0.5 rounded-full">{match.score}%</span>
+                        <span className="text-xs font-semibold text-primary tabular-nums bg-primary/10 px-2 py-0.5 rounded-full">{Math.round(match.score)}%</span>
                       </div>
                     </div>
                   ))}
