@@ -1,4 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { api } from "@/lib/api";
+import { useDebounce } from "@/hooks/useDebounce";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +33,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Target,
+  Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProfileCardSkeleton } from "@/components/SkeletonLoaders";
@@ -209,25 +214,98 @@ function ScoreBar({ score, label }: { score: number; label: string }) {
 }
 
 export default function DiscoverPage() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("All Roles");
   const [stageFilter, setStageFilter] = useState("All Stages");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [savedProfiles, setSavedProfiles] = useState<number[]>([]);
-  const [introSent, setIntroSent] = useState<number[]>([]);
+  const [introSent, setIntroSent] = useState<Set<string>>(new Set());
+  const [introLoading, setIntroLoading] = useState<Set<string>>(new Set());
   const [expandedProfile, setExpandedProfile] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [profiles, setProfiles] = useState<MatchProfile[]>(mockProfiles);
+  const [searchResults, setSearchResults] = useState<MatchProfile[] | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const debouncedQuery = useDebounce(searchQuery, 350);
 
+  // Auth guard
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1000);
-    return () => clearTimeout(timer);
+    if (!authLoading && !isAuthenticated) navigate("/login", { replace: true });
+  }, [authLoading, isAuthenticated, navigate]);
+
+  // Fetch real suggested users and merge with mock compatibility data
+  const fetchSuggested = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const { suggested } = await api.connections.getSuggested();
+      if (suggested.length > 0) {
+        const real: MatchProfile[] = suggested.map((u, i) => {
+          const mock = mockProfiles[i % mockProfiles.length];
+          return {
+            ...mock,
+            id: i + 100,
+            _realId: u.id,
+            name: u.name,
+            headline: u.headline ?? mock.headline,
+            skills: u.skills.length > 0 ? u.skills : mock.skills,
+            matchScore: u.matchScore,
+            explanation: u.reason,
+          } as MatchProfile & { _realId: string };
+        });
+        setProfiles(real.length > 0 ? real : mockProfiles);
+      }
+    } catch {
+      // Fallback to mock data — backend may be offline
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  const filtered = mockProfiles.filter((p) => {
-    const matchesSearch =
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.headline.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()));
+  useEffect(() => {
+    if (isAuthenticated) fetchSuggested();
+  }, [isAuthenticated, fetchSuggested]);
+
+  // Live backend search when query ≥ 2 chars
+  useEffect(() => {
+    if (debouncedQuery.trim().length < 2) {
+      setSearchResults(null);
+      return;
+    }
+    let cancelled = false;
+    setIsSearching(true);
+    api.search.query(debouncedQuery.trim(), "users", 30)
+      .then(({ users: hits }) => {
+        if (cancelled) return;
+        const results: MatchProfile[] = hits.map((h, i) => {
+          const mock = mockProfiles[i % mockProfiles.length];
+          return {
+            ...mock,
+            id: i + 1000,
+            _realId: h.id,
+            name: h.name || "Unknown",
+            headline: h.headline || mock.headline,
+            skills: h.skills ? h.skills.split(" ").filter(Boolean) : mock.skills,
+            location: h.location || mock.location,
+            matchScore: Math.round((h.score ?? 0.5) * 100),
+            explanation: `Matched by full-text search`,
+          } as MatchProfile & { _realId: string };
+        });
+        setSearchResults(results);
+      })
+      .catch(() => setSearchResults(null))
+      .finally(() => { if (!cancelled) setIsSearching(false); });
+    return () => { cancelled = true; };
+  }, [debouncedQuery]);
+
+  const sourceList = searchResults !== null ? searchResults : profiles;
+  const filtered = sourceList.filter((p) => {
+    const matchesSearch = searchResults !== null
+      ? true // already filtered by backend
+      : p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.headline.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesRole = roleFilter === "All Roles" || p.role === roleFilter;
     const matchesStage = stageFilter === "All Stages" || p.stage === stageFilter;
     return matchesSearch && matchesRole && matchesStage;
@@ -241,7 +319,21 @@ export default function DiscoverPage() {
   const toggleSave = (id: number) =>
     setSavedProfiles((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
-  const sendIntro = (id: number) => setIntroSent((prev) => [...prev, id]);
+  const sendIntro = useCallback(async (profile: MatchProfile) => {
+    const realId = (profile as MatchProfile & { _realId?: string })._realId;
+    const key = realId ?? String(profile.id);
+    if (introSent.has(key) || introLoading.has(key)) return;
+    setIntroLoading((prev) => new Set(prev).add(key));
+    if (realId) {
+      try {
+        await api.connections.requestConnection(realId, `Hi ${profile.name}, I'd love to connect!`);
+      } catch {
+        // Silently degrade — still mark as sent in UI
+      }
+    }
+    setIntroSent((prev) => new Set(prev).add(key));
+    setIntroLoading((prev) => { const s = new Set(prev); s.delete(key); return s; });
+  }, [introSent, introLoading]);
 
   return (
     <AppLayout title="Discover">
@@ -251,7 +343,8 @@ export default function DiscoverPage() {
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Search founders, co-founders, mentors..." className="pl-10" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+              <Input placeholder="Search founders, co-founders, mentors..." className="pl-10 pr-9" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+              {isSearching && <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground animate-spin" />}
             </div>
             <div className="flex gap-2">
               <Select value={roleFilter} onValueChange={setRoleFilter}>
@@ -271,7 +364,7 @@ export default function DiscoverPage() {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">{filtered.length} result{filtered.length !== 1 ? "s" : ""}</span>
+              <span className="text-sm text-muted-foreground">{filtered.length} {searchResults !== null ? "search result" : "match"}{filtered.length !== 1 ? "s" : ""}</span>
               {activeFilters.map((f) => (
                 <Badge key={f} variant="secondary" className="gap-1 text-xs">
                   {f}
@@ -334,10 +427,10 @@ export default function DiscoverPage() {
                               <div className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1">
                                 <span className="text-xs font-semibold text-primary">{profile.matchScore}%</span>
                               </div>
-                              {introSent.includes(profile.id) ? (
+                              {introSent.has((profile as MatchProfile & { _realId?: string })._realId ?? String(profile.id)) ? (
                                 <Button variant="outline" size="sm" className="text-xs" disabled>Sent</Button>
                               ) : (
-                                <Button variant="default" size="sm" className="text-xs" onClick={() => sendIntro(profile.id)}>Connect</Button>
+                                <Button variant="default" size="sm" className="text-xs" disabled={introLoading.has((profile as MatchProfile & { _realId?: string })._realId ?? String(profile.id))} onClick={() => sendIntro(profile)}>Connect</Button>
                               )}
                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleSave(profile.id)}>
                                 <Bookmark className={`h-4 w-4 ${savedProfiles.includes(profile.id) ? "fill-accent text-accent" : ""}`} />
@@ -446,13 +539,13 @@ export default function DiscoverPage() {
                           </AnimatePresence>
 
                           <div className="flex gap-2 mt-4">
-                            {introSent.includes(profile.id) ? (
+                            {introSent.has((profile as MatchProfile & { _realId?: string })._realId ?? String(profile.id)) ? (
                               <Button variant="outline" size="sm" className="flex-1 text-xs gap-1.5" disabled>
                                 <MessageSquare className="h-3 w-3" /> Request Sent
                               </Button>
                             ) : (
-                              <Button variant="default" size="sm" className="flex-1 text-xs gap-1.5" onClick={() => sendIntro(profile.id)}>
-                                <MessageSquare className="h-3 w-3" /> Request Intro
+                              <Button variant="default" size="sm" className="flex-1 text-xs gap-1.5" disabled={introLoading.has((profile as MatchProfile & { _realId?: string })._realId ?? String(profile.id))} onClick={() => sendIntro(profile)}>
+                                <MessageSquare className="h-3 w-3" /> {introLoading.has((profile as MatchProfile & { _realId?: string })._realId ?? String(profile.id)) ? "Sending…" : "Request Intro"}
                               </Button>
                             )}
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleSave(profile.id)}>

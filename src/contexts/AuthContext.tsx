@@ -35,6 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const logoutRef = useRef<() => void>(() => {});
+  const setUserRef = useRef<(u: User | null) => void>(() => {});
 
   useEffect(() => {
     try {
@@ -61,24 +62,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
-  const setUserRef = useRef(setUser);
-  setUserRef.current = setUser;
-
-  useEffect(() => {
-    logoutRef.current = logout;
-    configureApi({
-      getToken: () => user?.token ?? null,
-      getRefreshToken: () => user?.refreshToken ?? null,
-      onTokenRefreshed: (token) => {
-        if (user) {
-          const updated = { ...user, token };
-          setUserRef.current(updated);
-        }
-      },
-      onUnauthorized: () => logoutRef.current?.(),
-    });
-  }, [user, logout]);
-
   const setUser = useCallback((newUser: User | null) => {
     setUserState(newUser);
     if (newUser) {
@@ -87,6 +70,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem(STORAGE_KEY);
     }
   }, []);
+
+  setUserRef.current = setUser;
+
+  useEffect(() => {
+    logoutRef.current = logout;
+    configureApi({
+      getToken: () => user?.token ?? null,
+      getRefreshToken: () => user?.refreshToken ?? null,
+      onTokenRefreshed: (token, newRefreshToken) => {
+        if (user) {
+          const updated = { ...user, token, ...(newRefreshToken ? { refreshToken: newRefreshToken } : {}) };
+          setUserRef.current(updated);
+        }
+      },
+      onUnauthorized: () => logoutRef.current?.(),
+    });
+  }, [user, logout]);
 
   const login = useCallback((email: string, name?: string, token?: string, id?: string, refreshToken?: string) => {
     const newUser: User = {

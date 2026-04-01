@@ -54,7 +54,7 @@ export const AI_AGENTS: AIAgent[] = [
     id: "community-guide",
     name: "Community Guide",
     avatar: "🌐",
-    description: "Navigate the CoFounderBay ecosystem",
+    description: "Navigate the CoFounder Connect ecosystem",
     specialization: "Platform features, community discovery, networking tips",
     suggestedPrompts: [
       "How do I find the right community?",
@@ -85,11 +85,11 @@ const MOCK_RESPONSES: Record<string, string[]> = {
     "Your one-liner needs work. A strong pitch one-liner follows the formula:\n\n**\"We help [target audience] [solve problem] by [unique approach]\"**\n\nExample: *\"We help early-stage founders find compatible co-founders through AI-driven personality and skill matching.\"*\n\nKeep it under 15 words if possible. Want me to help craft yours?",
   ],
   "startup-advisor": [
-    "For an early-stage SaaS startup, here's my recommended GTM framework:\n\n**Phase 1 (0-3 months): Validate**\n- 20 customer discovery interviews\n- Landing page with waitlist\n- Define ICP (Ideal Customer Profile)\n\n**Phase 2 (3-6 months): Launch**\n- Beta with 10-20 design partners\n- Content marketing (blog, LinkedIn)\n- Community-led growth via CoFounderBay\n\n**Phase 3 (6-12 months): Scale**\n- Paid acquisition channels\n- Partnership development\n- Product-led growth features\n\nWhich phase are you currently in?",
-    "For your first fundraise, consider this approach:\n\n💰 **Pre-seed (€100K-€500K)**:\n- Angel investors + micro-VCs\n- Show problem validation + early product\n- SAFE notes preferred\n\n📋 **What investors want to see:**\n1. Team strength and complementarity\n2. Market size and timing\n3. Early signals (waitlist, LOIs, pilots)\n4. Clear use of funds\n\n**CoFounderBay tip:** Connect with investor profiles on the platform — Maria Santos and 3 others are actively seeking deal flow in your sector.",
+    "For an early-stage SaaS startup, here's my recommended GTM framework:\n\n**Phase 1 (0-3 months): Validate**\n- 20 customer discovery interviews\n- Landing page with waitlist\n- Define ICP (Ideal Customer Profile)\n\n**Phase 2 (3-6 months): Launch**\n- Beta with 10-20 design partners\n- Content marketing (blog, LinkedIn)\n- Community-led growth via CoFounder Connect\n\n**Phase 3 (6-12 months): Scale**\n- Paid acquisition channels\n- Partnership development\n- Product-led growth features\n\nWhich phase are you currently in?",
+    "For your first fundraise, consider this approach:\n\n💰 **Pre-seed (€100K-€500K)**:\n- Angel investors + micro-VCs\n- Show problem validation + early product\n- SAFE notes preferred\n\n📋 **What investors want to see:**\n1. Team strength and complementarity\n2. Market size and timing\n3. Early signals (waitlist, LOIs, pilots)\n4. Clear use of funds\n\n**CoFounder Connect tip:** Connect with investor profiles on the platform — Maria Santos and 3 others are actively seeking deal flow in your sector.",
   ],
   "community-guide": [
-    "Welcome to CoFounderBay! Here's how to get the most out of the platform:\n\n🏠 **Dashboard** — Your command center for matches, activity, and progress\n🔍 **Discover** — Browse and filter potential co-founders, mentors, and investors\n💬 **Messages** — Connect via structured intro requests (no cold DMs)\n🎯 **Milestones** — Track your startup journey\n👥 **Communities** — Join curated groups by industry or stage\n\n**Pro tips:**\n- Complete your profile to 100% for better match quality\n- Join at least 2 communities in your first week\n- Send 3 intro requests to high-compatibility matches",
+    "Welcome to CoFounder Connect! Here's how to get the most out of the platform:\n\n🏠 **Dashboard** — Your command center for matches, activity, and progress\n🔍 **Discover** — Browse and filter potential co-founders, mentors, and investors\n💬 **Messages** — Connect via structured intro requests (no cold DMs)\n🎯 **Milestones** — Track your startup journey\n👥 **Communities** — Join curated groups by industry or stage\n\n**Pro tips:**\n- Complete your profile to 100% for better match quality\n- Join at least 2 communities in your first week\n- Send 3 intro requests to high-compatibility matches",
   ],
 };
 

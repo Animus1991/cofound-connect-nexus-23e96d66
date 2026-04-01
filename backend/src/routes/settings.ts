@@ -1,7 +1,10 @@
-import { FastifyInstance, FastifyRequest } from "fastify";
+import { Hono } from "hono";
+import type { AppEnv } from "../types.js";
 import { z } from "zod";
-import { prisma } from "../lib/prisma.js";
-import { verifyToken } from "../lib/jwt.js";
+import { db } from "../db/index.js";
+import { users, userSettings } from "../db/schema.js";
+import { eq } from "drizzle-orm";
+import { authMiddleware } from "../middleware/auth.js";
 
 const settingsUpdateSchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -22,122 +25,80 @@ const settingsUpdateSchema = z.object({
   }).optional(),
 });
 
-async function authPreHandler(
-  request: FastifyRequest,
-  reply: { status: (code: number) => { send: (body: unknown) => unknown } }
-) {
-  const authHeader = request.headers.authorization;
-  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : undefined;
+export const settingsRoutes = new Hono<AppEnv>();
+settingsRoutes.use("*", authMiddleware);
 
-  if (!token) {
-    return reply.status(401).send({ error: "Unauthorized" });
+settingsRoutes.get("/me", (c) => {
+  const userId = c.get("userId") as string;
+  const user = db.select({ id: users.id, email: users.email, name: users.name }).from(users).where(eq(users.id, userId)).get();
+  if (!user) return c.json({ error: "User not found" }, 404);
+
+  const settings = db.select().from(userSettings).where(eq(userSettings.userId, userId)).get();
+
+  const defaultNotifications: Record<string, { email: boolean; push: boolean; inApp: boolean }> = {
+    n1: { email: true, push: true, inApp: true },
+    n2: { email: true, push: true, inApp: true },
+    n3: { email: true, push: false, inApp: true },
+    n4: { email: true, push: true, inApp: true },
+    n5: { email: true, push: false, inApp: false },
+    n6: { email: false, push: false, inApp: true },
+  };
+
+  const defaultPrivacy = {
+    profileVisibility: "public" as const,
+    showEmail: false,
+    showLocation: true,
+    activityStatus: true,
+    searchable: true,
+    allowIntros: true,
+  };
+
+  let notifications = defaultNotifications;
+  let privacy = defaultPrivacy;
+  if (settings?.notifications) {
+    try { notifications = { ...defaultNotifications, ...JSON.parse(settings.notifications) }; } catch { /* ignore */ }
+  }
+  if (settings?.privacy) {
+    try { privacy = { ...defaultPrivacy, ...JSON.parse(settings.privacy) }; } catch { /* ignore */ }
   }
 
-  const payload = verifyToken(token);
-  if (!payload) {
-    return reply.status(401).send({ error: "Invalid or expired token" });
+  return c.json({
+    user: { id: user.id, email: user.email, name: user.name },
+    language: settings?.language ?? "en",
+    timezone: settings?.timezone ?? "Europe/Athens",
+    notifications,
+    privacy,
+  });
+});
+
+settingsRoutes.put("/me", async (c) => {
+  const userId = c.get("userId") as string;
+  const body = await c.req.json();
+  const parseResult = settingsUpdateSchema.safeParse(body);
+  if (!parseResult.success) {
+    return c.json({ error: "Validation failed", details: parseResult.error.flatten() }, 400);
   }
 
-  (request as FastifyRequest & { userId: string }).userId = payload.userId;
-}
+  const data = parseResult.data;
 
-export async function settingsRoutes(app: FastifyInstance) {
-  app.addHook("preHandler", authPreHandler);
+  if (data.name !== undefined) {
+    db.update(users).set({ name: data.name }).where(eq(users.id, userId)).run();
+  }
 
-  app.get("/me", async (request, reply) => {
-    const { userId } = request as FastifyRequest & { userId: string };
+  const updateData: Record<string, unknown> = {};
+  if (data.language !== undefined) updateData.language = data.language;
+  if (data.timezone !== undefined) updateData.timezone = data.timezone;
+  if (data.notifications !== undefined) updateData.notifications = JSON.stringify(data.notifications);
+  if (data.privacy !== undefined) updateData.privacy = JSON.stringify(data.privacy);
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, email: true, name: true },
-    });
-
-    if (!user) {
-      return reply.status(404).send({ error: "User not found" });
+  if (Object.keys(updateData).length > 0) {
+    const existing = db.select({ id: userSettings.id }).from(userSettings).where(eq(userSettings.userId, userId)).get();
+    if (existing) {
+      db.update(userSettings).set(updateData).where(eq(userSettings.userId, userId)).run();
+    } else {
+      db.insert(userSettings).values({ userId, ...updateData } as typeof userSettings.$inferInsert).run();
     }
+  }
 
-    const settings = await prisma.userSettings.findUnique({
-      where: { userId },
-    });
-
-    const defaultNotifications: Record<string, { email: boolean; push: boolean; inApp: boolean }> = {
-      n1: { email: true, push: true, inApp: true },
-      n2: { email: true, push: true, inApp: true },
-      n3: { email: true, push: false, inApp: true },
-      n4: { email: true, push: true, inApp: true },
-      n5: { email: true, push: false, inApp: false },
-      n6: { email: false, push: false, inApp: true },
-    };
-
-    const defaultPrivacy = {
-      profileVisibility: "public" as const,
-      showEmail: false,
-      showLocation: true,
-      activityStatus: true,
-      searchable: true,
-      allowIntros: true,
-    };
-
-    let notifications = defaultNotifications;
-    let privacy = defaultPrivacy;
-    if (settings?.notifications) {
-      try {
-        notifications = { ...defaultNotifications, ...JSON.parse(settings.notifications) };
-      } catch {
-        /* ignore */
-      }
-    }
-    if (settings?.privacy) {
-      try {
-        privacy = { ...defaultPrivacy, ...JSON.parse(settings.privacy) };
-      } catch {
-        /* ignore */
-      }
-    }
-
-    return {
-      user: { id: user.id, email: user.email, name: user.name },
-      language: settings?.language ?? "en",
-      timezone: settings?.timezone ?? "Europe/Athens",
-      notifications,
-      privacy,
-    };
-  });
-
-  app.put("/me", async (request, reply) => {
-    const { userId } = request as FastifyRequest & { userId: string };
-    const parseResult = settingsUpdateSchema.safeParse(request.body);
-
-    if (!parseResult.success) {
-      return reply.status(400).send({
-        error: "Validation failed",
-        details: parseResult.error.flatten(),
-      });
-    }
-
-    const data = parseResult.data;
-
-    if (data.name !== undefined) {
-      await prisma.user.update({
-        where: { id: userId },
-        data: { name: data.name },
-      });
-    }
-
-    const updateData: Record<string, unknown> = {};
-    if (data.language !== undefined) updateData.language = data.language;
-    if (data.timezone !== undefined) updateData.timezone = data.timezone;
-    if (data.notifications !== undefined) updateData.notifications = JSON.stringify(data.notifications);
-    if (data.privacy !== undefined) updateData.privacy = JSON.stringify(data.privacy);
-
-    if (Object.keys(updateData).length > 0) {
-      await prisma.userSettings.upsert({
-        where: { userId },
-        create: { userId, ...updateData } as { userId: string; [k: string]: unknown },
-        update: updateData,
-      });
-    }
-
-    return { ok: true };
-  });
-}
+  return c.json({ ok: true });
+});

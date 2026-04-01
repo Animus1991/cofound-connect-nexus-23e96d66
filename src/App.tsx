@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,35 +9,49 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { AnimatePresence } from "framer-motion";
 import PageTransition from "@/components/PageTransition";
 import ChatWidget from "@/components/ChatWidget";
-import LandingPage from "./pages/LandingPage";
-import LoginPage from "./pages/LoginPage";
-import SignupPage from "./pages/SignupPage";
-import DashboardPage from "./pages/DashboardPage";
-import DiscoverPage from "./pages/DiscoverPage";
-import MessagesPage from "./pages/MessagesPage";
-import OpportunitiesPage from "./pages/OpportunitiesPage";
-import NetworkPage from "./pages/NetworkPage";
-import ProfilePage from "./pages/ProfilePage";
-import LearningPage from "./pages/LearningPage";
-import SettingsPage from "./pages/SettingsPage";
-import OnboardingPage from "./pages/OnboardingPage";
-import MentorsPage from "./pages/MentorsPage";
-import CommunitiesPage from "./pages/CommunitiesPage";
-import CommunityDetailPage from "./pages/CommunityDetailPage";
-import MilestonesPage from "./pages/MilestonesPage";
-import AdminDashboardPage from "./pages/AdminDashboardPage";
-import NotFound from "./pages/NotFound";
-import DemoPage from "./pages/DemoPage";
-import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import ResetPasswordPage from "./pages/ResetPasswordPage";
-import PrivacyPage from "./pages/PrivacyPage";
-import TermsPage from "./pages/TermsPage";
+import { Loader2 } from "lucide-react";
+
+// ── Lazy-loaded pages (code splitting) ───────────────────────
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const SignupPage = lazy(() => import("./pages/SignupPage"));
+const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const DiscoverPage = lazy(() => import("./pages/DiscoverPage"));
+const MessagesPage = lazy(() => import("./pages/MessagesPage"));
+const OpportunitiesPage = lazy(() => import("./pages/OpportunitiesPage"));
+const NetworkPage = lazy(() => import("./pages/NetworkPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const LearningPage = lazy(() => import("./pages/LearningPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const OnboardingPage = lazy(() => import("./pages/OnboardingPage"));
+const MentorsPage = lazy(() => import("./pages/MentorsPage"));
+const CommunitiesPage = lazy(() => import("./pages/CommunitiesPage"));
+const CommunityDetailPage = lazy(() => import("./pages/CommunityDetailPage"));
+const MilestonesPage = lazy(() => import("./pages/MilestonesPage"));
+const AdminDashboardPage = lazy(() => import("./pages/AdminDashboardPage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const DemoPage = lazy(() => import("./pages/DemoPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
+const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
+const TermsPage = lazy(() => import("./pages/TermsPage"));
+const OAuthCallbackPage = lazy(() => import("./pages/OAuthCallbackPage"));
+const StartupPage = lazy(() => import("./pages/StartupPage"));
+
+function PageLoader() {
+  return (
+    <div className="flex h-screen w-full items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+}
 
 const queryClient = new QueryClient();
 
 function AnimatedRoutes() {
   const location = useLocation();
   return (
+    <Suspense fallback={<PageLoader />}>
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<PageTransition><LandingPage /></PageTransition>} />
@@ -61,9 +76,12 @@ function AnimatedRoutes() {
         <Route path="/reset-password" element={<PageTransition><ResetPasswordPage /></PageTransition>} />
         <Route path="/privacy" element={<PageTransition><PrivacyPage /></PageTransition>} />
         <Route path="/terms" element={<PageTransition><TermsPage /></PageTransition>} />
+        <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+        <Route path="/startup" element={<PageTransition><StartupPage /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>
+    </Suspense>
   );
 }
 
@@ -74,7 +92,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <AnimatedRoutes />
             <ChatWidget />
           </BrowserRouter>

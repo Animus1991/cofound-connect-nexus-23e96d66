@@ -11,7 +11,7 @@ export default function PrivacyPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
               <Rocket className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-display text-xl font-bold text-foreground">CoFounderBay</span>
+            <span className="font-display text-xl font-bold text-foreground">CoFounder Connect</span>
           </Link>
           <Link to="/signup">
             <Button variant="ghost" size="sm" className="gap-1.5">

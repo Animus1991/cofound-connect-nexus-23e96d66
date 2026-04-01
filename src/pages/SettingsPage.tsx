@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
+import { useAuth } from "@/contexts/AuthContext";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,12 +50,44 @@ interface ConnectedAccount {
 // ── Component ──────────────────────────────────────────────
 export default function SettingsPage() {
   const { toast } = useToast();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("account");
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate("/login", { replace: true });
+    }
+  }, [authLoading, isAuthenticated, navigate]);
+
+  // Fetch settings from API on mount
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    api.settings.getMe().then((res) => {
+      setAccountData({
+        name: res.user?.name ?? user?.name ?? "",
+        email: res.user?.email ?? user?.email ?? "",
+        language: res.language ?? "en",
+        timezone: res.timezone ?? "Europe/Athens",
+      });
+      if (res.privacy) {
+        setPrivacy({
+          profileVisibility: res.privacy.profileVisibility ?? "public",
+          showEmail: res.privacy.showEmail ?? false,
+          showLocation: res.privacy.showLocation ?? true,
+          activityStatus: res.privacy.activityStatus ?? true,
+          searchable: res.privacy.searchable ?? true,
+          allowIntros: res.privacy.allowIntros ?? true,
+        });
+      }
+    }).catch(() => { /* use defaults */ });
+  }, [isAuthenticated, user]);
 
   // Account
   const [accountData, setAccountData] = useState({
-    name: "Jane Doe",
-    email: "jane@cofounderbay.com",
+    name: user?.name ?? "",
+    email: user?.email ?? "",
     language: "en",
     timezone: "Europe/Athens",
   });
@@ -64,7 +99,7 @@ export default function SettingsPage() {
     { id: "n3", label: "Opportunity Matches", description: "When a new opportunity matches your profile.", email: true, push: false, inApp: true },
     { id: "n4", label: "Mentor Sessions", description: "Reminders for upcoming mentor sessions.", email: true, push: true, inApp: true },
     { id: "n5", label: "Weekly Digest", description: "A weekly summary of activity on your profile.", email: true, push: false, inApp: false },
-    { id: "n6", label: "Product Updates", description: "News about CoFounderBay features and improvements.", email: false, push: false, inApp: true },
+    { id: "n6", label: "Product Updates", description: "News about CoFounder Connect features and improvements.", email: false, push: false, inApp: true },
   ]);
 
   // Privacy
@@ -101,8 +136,24 @@ export default function SettingsPage() {
     );
   };
 
-  const handleSave = () => {
-    toast({ title: "Settings saved", description: "Your preferences have been updated." });
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const notifMap: Record<string, { email: boolean; push: boolean; inApp: boolean }> = {};
+      notifications.forEach((n) => { notifMap[n.id] = { email: n.email, push: n.push, inApp: n.inApp }; });
+      await api.settings.updateMe({
+        name: accountData.name,
+        language: accountData.language as "en" | "el" | "es" | "fr",
+        timezone: accountData.timezone,
+        notifications: notifMap,
+        privacy,
+      });
+      toast({ title: "Settings saved", description: "Your preferences have been updated." });
+    } catch {
+      toast({ title: "Error", description: "Failed to save settings. Please try again.", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (

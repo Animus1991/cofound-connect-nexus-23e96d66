@@ -30,6 +30,7 @@ export default function ChatWidget() {
     aiConversations,
     totalUnread,
     getMessages,
+    loadMessages,
     sendMessage,
     sendAIMessage,
     markAsRead,
@@ -74,8 +75,9 @@ export default function ChatWidget() {
       setActiveAgent(null);
       setView("thread");
       markAsRead(convoId);
+      loadMessages(convoId); // fetch real message history from backend for non-mock convos
     },
-    [markAsRead]
+    [markAsRead, loadMessages]
   );
 
   if (isHidden) return null;

@@ -81,10 +81,10 @@ const mockCourses: Course[] = [
 ];
 
 const mockResources: Resource[] = [
-  { id: "r1", title: "The Perfect Pitch Deck Template", description: "A proven 12-slide framework used by 500+ funded startups.", type: "template", category: "Fundraising", readTime: "10 min", author: "CoFounderBay Team", saved: true },
+  { id: "r1", title: "The Perfect Pitch Deck Template", description: "A proven 12-slide framework used by 500+ funded startups.", type: "template", category: "Fundraising", readTime: "10 min", author: "CoFounder Connect Team", saved: true },
   { id: "r2", title: "How to Calculate Your Startup Valuation", description: "Step-by-step guide to pre-money and post-money valuation methods.", type: "article", category: "Finance", readTime: "8 min", author: "Maria Santos", saved: false },
   { id: "r3", title: "Customer Interview Techniques", description: "The Mom Test in practice — how to get honest feedback from users.", type: "video", category: "Product", readTime: "15 min", author: "Alex Rivera", saved: false },
-  { id: "r4", title: "Founder Equity Split Calculator", description: "Interactive tool to fairly divide equity among co-founders.", type: "template", category: "Legal", readTime: "5 min", author: "CoFounderBay Team", saved: false },
+  { id: "r4", title: "Founder Equity Split Calculator", description: "Interactive tool to fairly divide equity among co-founders.", type: "template", category: "Legal", readTime: "5 min", author: "CoFounder Connect Team", saved: false },
   { id: "r5", title: "Cold Email Playbook for B2B", description: "Templates and sequences that get 40%+ open rates.", type: "guide", category: "Growth", readTime: "12 min", author: "Nikos M.", saved: true },
   { id: "r6", title: "YC Application Tips 2025", description: "What Y Combinator actually looks for, straight from alumni.", type: "article", category: "Accelerators", readTime: "7 min", author: "Sara K.", saved: false },
 ];

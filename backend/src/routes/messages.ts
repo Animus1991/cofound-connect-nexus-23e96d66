@@ -1,7 +1,11 @@
-import { FastifyInstance, FastifyRequest } from "fastify";
+import { Hono } from "hono";
+import type { AppEnv } from "../types.js";
 import { z } from "zod";
-import { prisma } from "../lib/prisma.js";
-import { authPreHandler } from "../lib/auth.js";
+import { db } from "../db/index.js";
+import { users, conversations, conversationParticipants, messages } from "../db/schema.js";
+import { eq, and, asc, desc, inArray } from "drizzle-orm";
+import { authMiddleware } from "../middleware/auth.js";
+import { logActivity } from "../lib/activity.js";
 
 const sendMessageSchema = z.object({
   content: z.string().min(1).max(5000),
@@ -11,169 +15,156 @@ const createConversationSchema = z.object({
   participantId: z.string().min(1),
 });
 
-export async function messagesRoutes(app: FastifyInstance) {
-  app.addHook("preHandler", authPreHandler);
+export const messagesRoutes = new Hono<AppEnv>();
+messagesRoutes.use("*", authMiddleware);
 
-  app.get("/conversations", async (request) => {
-    const { userId } = request as FastifyRequest & { userId: string };
+messagesRoutes.get("/conversations", (c) => {
+  const userId = c.get("userId") as string;
 
-    const participants = await prisma.conversationParticipant.findMany({
-      where: { userId },
-      include: {
-        conversation: {
-          include: {
-            participants: {
-              include: {
-                user: { select: { id: true, name: true } },
-              },
-            },
-            messages: {
-              orderBy: { createdAt: "desc" },
-              take: 1,
-            },
-          },
-        },
-      },
-    });
+  const myParticipations = db.select().from(conversationParticipants)
+    .where(eq(conversationParticipants.userId, userId)).all();
 
-    const conversations = participants.map((p) => {
-      const other = p.conversation.participants.find((x) => x.userId !== userId);
-      const lastMsg = p.conversation.messages[0];
-      return {
-        id: p.conversationId,
-        otherUser: other?.user ?? null,
-        lastMessage: lastMsg
-          ? { content: lastMsg.content, createdAt: lastMsg.createdAt, fromMe: lastMsg.senderId === userId }
-          : null,
-      };
-    });
+  const convIds = myParticipations.map((p) => p.conversationId);
+  if (convIds.length === 0) return c.json({ conversations: [] });
 
-    return { conversations };
-  });
+  // Batch-load all participants for all conversations
+  const allParts = db.select().from(conversationParticipants)
+    .where(inArray(conversationParticipants.conversationId, convIds)).all();
 
-  app.post("/conversations", async (request, reply) => {
-    const { userId } = request as FastifyRequest & { userId: string };
-    const parseResult = createConversationSchema.safeParse(request.body);
+  // Build map: conversationId → other user ID
+  const otherUserIdMap = new Map<string, string>();
+  for (const p of allParts) {
+    if (p.userId !== userId) otherUserIdMap.set(p.conversationId, p.userId);
+  }
 
-    if (!parseResult.success) {
-      return reply.status(400).send({
-        error: "Validation failed",
-        details: parseResult.error.flatten(),
-      });
-    }
+  // Batch-load all other users
+  const otherIds = [...new Set(otherUserIdMap.values())];
+  const userMap = new Map<string, { id: string; name: string | null }>();
+  if (otherIds.length > 0) {
+    db.select({ id: users.id, name: users.name }).from(users).where(inArray(users.id, otherIds)).all()
+      .forEach((u) => userMap.set(u.id, u));
+  }
 
-    const { participantId } = parseResult.data;
-    if (participantId === userId) {
-      return reply.status(400).send({ error: "Cannot create conversation with yourself" });
-    }
+  // Batch-load last message per conversation
+  const allMsgs = db.select().from(messages)
+    .where(inArray(messages.conversationId, convIds))
+    .orderBy(desc(messages.createdAt)).all();
+  const lastMsgMap = new Map<string, typeof messages.$inferSelect>();
+  for (const m of allMsgs) {
+    if (!lastMsgMap.has(m.conversationId)) lastMsgMap.set(m.conversationId, m);
+  }
 
-    const existing = await prisma.conversation.findFirst({
-      where: {
-        AND: [
-          { participants: { some: { userId } } },
-          { participants: { some: { userId: participantId } } },
-        ],
-      },
-    });
-
-    if (existing) {
-      return reply.status(200).send({
-        id: existing.id,
-        existing: true,
-      });
-    }
-
-    const conv = await prisma.conversation.create({
-      data: {
-        participants: {
-          create: [
-            { userId },
-            { userId: participantId },
-          ],
-        },
-      },
-    });
-
-    return reply.status(201).send({ id: conv.id, existing: false });
-  });
-
-  app.get("/conversations/:id", async (request, reply) => {
-    const { userId } = request as FastifyRequest & { userId: string };
-    const { id } = request.params as { id: string };
-
-    const participant = await prisma.conversationParticipant.findFirst({
-      where: { conversationId: id, userId },
-    });
-    if (!participant) {
-      return reply.status(404).send({ error: "Conversation not found" });
-    }
-
-    const conversation = await prisma.conversation.findUnique({
-      where: { id },
-      include: {
-        participants: { include: { user: { select: { id: true, name: true } } } },
-        messages: {
-          orderBy: { createdAt: "asc" },
-          include: { sender: { select: { id: true, name: true } } },
-        },
-      },
-    });
-
-    if (!conversation) {
-      return reply.status(404).send({ error: "Conversation not found" });
-    }
-
-    const other = conversation.participants.find((p) => p.userId !== userId);
-
+  const convos = myParticipations.map((p) => {
+    const otherId = otherUserIdMap.get(p.conversationId);
+    const otherUser = otherId ? userMap.get(otherId) ?? null : null;
+    const lastMsg = lastMsgMap.get(p.conversationId);
     return {
-      id: conversation.id,
-      otherUser: other?.user ?? null,
-      messages: conversation.messages.map((m) => ({
-        id: m.id,
-        content: m.content,
-        senderId: m.senderId,
-        senderName: m.sender.name,
-        createdAt: m.createdAt,
-        fromMe: m.senderId === userId,
-      })),
+      id: p.conversationId,
+      otherUser,
+      lastMessage: lastMsg
+        ? { content: lastMsg.content, createdAt: lastMsg.createdAt, fromMe: lastMsg.senderId === userId }
+        : null,
     };
   });
 
-  app.post("/conversations/:id/messages", async (request, reply) => {
-    const { userId } = request as FastifyRequest & { userId: string };
-    const { id } = request.params as { id: string };
-    const parseResult = sendMessageSchema.safeParse(request.body);
+  return c.json({ conversations: convos });
+});
 
-    if (!parseResult.success) {
-      return reply.status(400).send({
-        error: "Validation failed",
-        details: parseResult.error.flatten(),
-      });
+messagesRoutes.post("/conversations", async (c) => {
+  const userId = c.get("userId") as string;
+  const body = await c.req.json();
+  const parseResult = createConversationSchema.safeParse(body);
+  if (!parseResult.success) return c.json({ error: "Validation failed", details: parseResult.error.flatten() }, 400);
+
+  const { participantId } = parseResult.data;
+  if (participantId === userId) return c.json({ error: "Cannot create conversation with yourself" }, 400);
+
+  // Check for existing conversation between these two users (single query instead of N+1 loop)
+  const myConvIds = db.select({ conversationId: conversationParticipants.conversationId })
+    .from(conversationParticipants).where(eq(conversationParticipants.userId, userId)).all()
+    .map((r) => r.conversationId);
+
+  if (myConvIds.length > 0) {
+    const otherInMyConvs = db.select({ conversationId: conversationParticipants.conversationId })
+      .from(conversationParticipants)
+      .where(and(inArray(conversationParticipants.conversationId, myConvIds), eq(conversationParticipants.userId, participantId)))
+      .get();
+    if (otherInMyConvs) {
+      return c.json({ id: otherInMyConvs.conversationId, existing: true }, 200);
     }
+  }
 
-    const participant = await prisma.conversationParticipant.findFirst({
-      where: { conversationId: id, userId },
-    });
-    if (!participant) {
-      return reply.status(404).send({ error: "Conversation not found" });
-    }
-
-    const msg = await prisma.message.create({
-      data: {
-        conversationId: id,
-        senderId: userId,
-        content: parseResult.data.content,
-      },
-      include: { sender: { select: { id: true, name: true } } },
-    });
-
-    return reply.status(201).send({
-      id: msg.id,
-      content: msg.content,
-      senderId: msg.senderId,
-      senderName: msg.sender.name,
-      createdAt: msg.createdAt,
-      fromMe: true,
-    });
+  // Create new conversation + participants in a transaction
+  const convId = db.transaction((tx) => {
+    const conv = tx.insert(conversations).values({}).returning().get();
+    tx.insert(conversationParticipants).values({ conversationId: conv.id, userId }).run();
+    tx.insert(conversationParticipants).values({ conversationId: conv.id, userId: participantId }).run();
+    return conv.id;
   });
-}
+
+  return c.json({ id: convId, existing: false }, 201);
+});
+
+messagesRoutes.get("/conversations/:id", (c) => {
+  const userId = c.get("userId") as string;
+  const id = c.req.param("id");
+
+  const participant = db.select().from(conversationParticipants)
+    .where(and(eq(conversationParticipants.conversationId, id), eq(conversationParticipants.userId, userId))).get();
+  if (!participant) return c.json({ error: "Conversation not found" }, 404);
+
+  const allParticipants = db.select().from(conversationParticipants)
+    .where(eq(conversationParticipants.conversationId, id)).all();
+  const otherPart = allParticipants.find((p) => p.userId !== userId);
+  const otherUser = otherPart
+    ? db.select({ id: users.id, name: users.name }).from(users).where(eq(users.id, otherPart.userId)).get()
+    : null;
+
+  const msgs = db.select().from(messages)
+    .where(eq(messages.conversationId, id))
+    .orderBy(asc(messages.createdAt)).all();
+
+  // Batch-load all sender names instead of per-message query
+  const senderIds = [...new Set(msgs.map((m) => m.senderId))];
+  const senderMap = new Map<string, { id: string; name: string | null }>();
+  if (senderIds.length > 0) {
+    db.select({ id: users.id, name: users.name }).from(users).where(inArray(users.id, senderIds)).all()
+      .forEach((u) => senderMap.set(u.id, u));
+  }
+
+  return c.json({
+    id,
+    otherUser: otherUser ?? null,
+    messages: msgs.map((m) => {
+      const sender = senderMap.get(m.senderId);
+      return {
+        id: m.id, content: m.content, senderId: m.senderId,
+        senderName: sender?.name ?? "Unknown", createdAt: m.createdAt, fromMe: m.senderId === userId,
+      };
+    }),
+  });
+});
+
+messagesRoutes.post("/conversations/:id/messages", async (c) => {
+  const userId = c.get("userId") as string;
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const parseResult = sendMessageSchema.safeParse(body);
+  if (!parseResult.success) return c.json({ error: "Validation failed", details: parseResult.error.flatten() }, 400);
+
+  const participant = db.select().from(conversationParticipants)
+    .where(and(eq(conversationParticipants.conversationId, id), eq(conversationParticipants.userId, userId))).get();
+  if (!participant) return c.json({ error: "Conversation not found" }, 404);
+
+  const msg = db.insert(messages).values({
+    conversationId: id, senderId: userId, content: parseResult.data.content,
+  }).returning().get();
+  logActivity(userId, "message_sent", { conversationId: id });
+
+  const sender = db.select({ id: users.id, name: users.name }).from(users).where(eq(users.id, userId)).get();
+
+  return c.json({
+    id: msg.id, content: msg.content, senderId: msg.senderId,
+    senderName: sender?.name ?? "Unknown", createdAt: msg.createdAt, fromMe: true,
+  }, 201);
+});

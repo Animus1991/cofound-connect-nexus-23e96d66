@@ -88,7 +88,7 @@ export default function ResetPasswordPage() {
               <Rocket className="h-4 w-4 text-primary-foreground" />
             </div>
             <span className="font-display text-xl font-bold text-foreground">
-              CoFounderBay
+              CoFounder Connect
             </span>
           </Link>
 

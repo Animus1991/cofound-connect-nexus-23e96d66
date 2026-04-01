@@ -86,7 +86,7 @@ export default function LandingPage() {
               <Rocket className="h-4 w-4 text-primary-foreground" />
             </div>
             <span className="font-display text-xl font-bold text-foreground">
-              CoFounderBay
+              CoFounder Connect
             </span>
           </Link>
           <div className="hidden items-center gap-8 md:flex">
@@ -197,7 +197,7 @@ export default function LandingPage() {
               custom={2}
               className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground md:text-xl"
             >
-              CoFounderBay connects founders, investors, mentors, and
+              CoFounder Connect connects founders, investors, mentors, and
               professionals through smart matching, structured collaboration,
               and a thriving startup community.
             </motion.p>
@@ -268,7 +268,7 @@ export default function LandingPage() {
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
               From finding your co-founder to closing your first round —
-              CoFounderBay is your startup command center.
+              CoFounder Connect is your startup command center.
             </p>
           </motion.div>
 
@@ -378,7 +378,7 @@ export default function LandingPage() {
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
                 Join thousands of founders, investors, and professionals already
-                building the future on CoFounderBay.
+                building the future on CoFounder Connect.
               </p>
               <div className="mt-8">
                 <Link to="/signup">
@@ -402,11 +402,11 @@ export default function LandingPage() {
                 <Rocket className="h-3.5 w-3.5 text-primary-foreground" />
               </div>
               <span className="font-display text-lg font-bold text-foreground">
-                CoFounderBay
+                CoFounder Connect
               </span>
             </div>
             <p className="text-sm text-muted-foreground">
-              © 2026 CoFounderBay. All rights reserved.
+              © 2026 CoFounder Connect. All rights reserved.
             </p>
           </div>
         </div>

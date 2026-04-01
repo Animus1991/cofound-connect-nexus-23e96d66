@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Rocket, Mail, Lock, User, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Rocket, Mail, Lock, User, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import heroBg from "@/assets/hero-bg.jpg";
+import { useAuth } from "@/contexts/AuthContext";
+import { api } from "@/lib/api";
 
 const roleOptions = [
   { value: "founder", label: "Founder / Co-founder" },
@@ -15,16 +17,46 @@ const roleOptions = [
 ];
 
 export default function SignupPage() {
+  const { login, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (isAuthenticated) {
+    navigate("/onboarding", { replace: true });
+  }
 
   const toggleRole = (value: string) => {
     setSelectedRoles((prev) =>
       prev.includes(value) ? prev.filter((r) => r !== value) : [...prev, value]
     );
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!name.trim()) { setError("Full name is required."); return; }
+    if (!email.trim()) { setError("Email is required."); return; }
+    if (password.length < 8 || !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+      setError("Password must be at least 8 characters with uppercase, lowercase, and a number.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await api.auth.register({ name, email, password, roles: selectedRoles });
+      login(res.user.email, res.user.name, res.token, res.user.id, res.refreshToken);
+      navigate("/onboarding", { replace: true });
+    } catch (err) {
+      const msg = (err as { error?: string })?.error ?? "Unable to create account. Please try again.";
+      setError(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -76,7 +108,7 @@ export default function SignupPage() {
               <Rocket className="h-4 w-4 text-primary-foreground" />
             </div>
             <span className="font-display text-xl font-bold text-foreground">
-              CoFounderBay
+              CoFounder Connect
             </span>
           </Link>
 
@@ -87,7 +119,7 @@ export default function SignupPage() {
             Join the startup ecosystem in under 2 minutes.
           </p>
 
-          <form className="mt-8 space-y-5" onSubmit={(e) => e.preventDefault()}>
+          <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
             <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="space-y-2">
               <Label htmlFor="name">Full name</Label>
               <div className="relative group">
@@ -110,6 +142,7 @@ export default function SignupPage() {
                   id="signup-password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
+                  autoComplete="new-password"
                   className="pl-10 pr-10 transition-shadow focus-visible:shadow-glow"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -145,10 +178,23 @@ export default function SignupPage() {
               </div>
             </motion.div>
 
+            {error && (
+              <motion.p
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-sm font-medium text-destructive"
+              >
+                {error}
+              </motion.p>
+            )}
+
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
-              <Button variant="hero" className="w-full gap-2 group" size="lg">
-                Create Account
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              <Button variant="hero" className="w-full gap-2 group" size="lg" type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>Create Account <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></>
+                )}
               </Button>
             </motion.div>
           </form>

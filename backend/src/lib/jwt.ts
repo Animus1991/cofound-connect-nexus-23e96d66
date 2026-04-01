@@ -11,8 +11,8 @@ export interface TokenPayload {
   email: string;
 }
 
-export function signToken(payload: TokenPayload, expiresIn = "15m"): string {
-  return jwt.sign(payload, SECRET, { expiresIn });
+export function signToken(payload: TokenPayload, expiresIn: string = "15m"): string {
+  return jwt.sign(payload, SECRET, { expiresIn: expiresIn as jwt.SignOptions["expiresIn"] });
 }
 
 export function signLongLivedToken(payload: TokenPayload): string {

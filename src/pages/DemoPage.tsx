@@ -45,7 +45,7 @@ export default function DemoPage() {
         </div>
 
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">CoFounderBay Demo</h1>
+          <h1 className="text-2xl font-bold tracking-tight">CoFounder Connect Demo</h1>
           <p className="text-muted-foreground mt-2 text-sm">
             Explore the full platform with sample data — no account required.
           </p>

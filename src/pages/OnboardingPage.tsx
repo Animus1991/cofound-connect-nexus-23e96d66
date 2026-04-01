@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +23,7 @@ import {
   Zap,
   Globe,
   Clock,
+  Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -66,10 +69,12 @@ const suggestedPeople = [
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [step, setStep] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Step 1: Profile
-  const [name, setName] = useState("");
+  const [name, setName] = useState(user?.name ?? "");
   const [headline, setHeadline] = useState("");
   const [location, setLocation] = useState("");
   const [bio, setBio] = useState("");
@@ -97,7 +102,26 @@ export default function OnboardingPage() {
     step === 1 ? selectedInterests.length > 0 :
     true;
 
-  const handleFinish = () => navigate("/dashboard");
+  const handleFinish = async () => {
+    setIsSaving(true);
+    try {
+      await api.profiles.updateMe({
+        name: name.trim() || undefined,
+        headline: headline.trim() || undefined,
+        location: location.trim() || undefined,
+        bio: bio.trim() || undefined,
+        skills: selectedSkills,
+        interests: selectedInterests,
+        stage: stage || undefined,
+        commitment: commitment || undefined,
+      });
+    } catch {
+      // Profile save failed — continue to dashboard anyway (non-blocking)
+    } finally {
+      setIsSaving(false);
+      navigate("/dashboard");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-hero-gradient flex flex-col">
@@ -383,8 +407,8 @@ export default function OnboardingPage() {
               Continue <ArrowRight className="h-4 w-4" />
             </Button>
           ) : (
-            <Button variant="hero" onClick={handleFinish} className="gap-1.5">
-              <Sparkles className="h-4 w-4" /> Get Started
+            <Button variant="hero" onClick={handleFinish} disabled={isSaving} className="gap-1.5">
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Get Started
             </Button>
           )}
         </div>

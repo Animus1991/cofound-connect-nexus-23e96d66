@@ -11,7 +11,7 @@ export default function TermsPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
               <Rocket className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-display text-xl font-bold text-foreground">CoFounderBay</span>
+            <span className="font-display text-xl font-bold text-foreground">CoFounder Connect</span>
           </Link>
           <Link to="/signup">
             <Button variant="ghost" size="sm" className="gap-1.5">
@@ -29,7 +29,7 @@ export default function TermsPage() {
           <section>
             <h2 className="font-display text-xl font-semibold text-foreground">1. Acceptance of Terms</h2>
             <p className="mt-2">
-              By accessing or using CoFounderBay, you agree to be bound by these Terms of Service.
+              By accessing or using CoFounder Connect, you agree to be bound by these Terms of Service.
               If you do not agree, please do not use our platform.
             </p>
           </section>
@@ -37,7 +37,7 @@ export default function TermsPage() {
           <section>
             <h2 className="font-display text-xl font-semibold text-foreground">2. Description of Service</h2>
             <p className="mt-2">
-              CoFounderBay is a platform that connects founders, investors, mentors, and professionals
+              CoFounder Connect is a platform that connects founders, investors, mentors, and professionals
               in the startup ecosystem. We provide matching, messaging, and collaboration tools.
             </p>
           </section>

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Home,
   Search,
@@ -21,7 +22,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 const navItems = [
   { icon: Home, label: "Dashboard", path: "/dashboard" },
   { icon: Search, label: "Discover", path: "/discover" },
-  { icon: MessageSquare, label: "Messages", path: "/messages", badge: 3 },
+  { icon: MessageSquare, label: "Messages", path: "/messages" },
   { icon: GraduationCap, label: "Mentors", path: "/mentors" },
   { icon: Users, label: "Communities", path: "/communities" },
   { icon: Briefcase, label: "Opportunities", path: "/opportunities" },
@@ -31,13 +32,15 @@ const navItems = [
 const bottomTabs = [
   { icon: Home, label: "Home", path: "/dashboard" },
   { icon: Search, label: "Discover", path: "/discover" },
-  { icon: MessageSquare, label: "Messages", path: "/messages", badge: 3 },
+  { icon: MessageSquare, label: "Messages", path: "/messages" },
   { icon: Users, label: "Community", path: "/communities" },
   { icon: Target, label: "Milestones", path: "/milestones" },
 ];
 
 export function MobileHeader() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [open, setOpen] = useState(false);
 
   return (
@@ -49,7 +52,7 @@ export function MobileHeader() {
             <Rocket className="h-3.5 w-3.5 text-primary-foreground" />
           </div>
           <span className="font-display text-base font-bold text-foreground">
-            CoFounderBay
+            CoFounder Connect
           </span>
         </div>
 
@@ -65,7 +68,7 @@ export function MobileHeader() {
                 <Rocket className="h-3.5 w-3.5 text-primary-foreground" />
               </div>
               <span className="font-display text-base font-bold text-sidebar-foreground">
-                CoFounderBay
+                CoFounder Connect
               </span>
             </div>
             <nav className="flex-1 space-y-1 p-4">
@@ -84,11 +87,6 @@ export function MobileHeader() {
                   >
                     <item.icon className="h-4 w-4" />
                     {item.label}
-                    {item.badge && (
-                      <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground">
-                        {item.badge}
-                      </span>
-                    )}
                   </Link>
                 );
               })}
@@ -102,7 +100,10 @@ export function MobileHeader() {
                 <Settings className="h-4 w-4" />
                 Settings
               </Link>
-              <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/50">
+              <button
+                onClick={() => { setOpen(false); logout(); navigate("/"); }}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
+              >
                 <LogOut className="h-4 w-4" />
                 Log out
               </button>
@@ -133,11 +134,6 @@ export function MobileBottomNav() {
           >
             <tab.icon className="h-5 w-5" />
             {tab.label}
-            {tab.badge && (
-              <span className="absolute -top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[8px] font-bold text-accent-foreground">
-                {tab.badge}
-              </span>
-            )}
           </Link>
         );
       })}

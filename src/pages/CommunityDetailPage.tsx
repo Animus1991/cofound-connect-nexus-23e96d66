@@ -29,7 +29,7 @@ const communityData: Record<string, {
 };
 
 const defaultCommunity = {
-  title: "Community", description: "A startup community on CoFounderBay.", category: "General",
+  title: "Community", description: "A startup community on CoFounder Connect.", category: "General",
   members: 500, posts: 200, isPublic: true, tags: ["Startups"],
   about: "Welcome to this community. Connect, share, and grow together.",
   rules: ["Be respectful", "No spam"],

@@ -1,9 +1,3 @@
-import { PrismaClient } from "@prisma/client";
-
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
-
-export const prisma = globalForPrisma.prisma ?? new PrismaClient();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+// DEPRECATED: Prisma has been fully replaced by Drizzle ORM.
+// Import from "../db/index.js" directly. This file will be removed.
+export { db } from "../db/index.js";

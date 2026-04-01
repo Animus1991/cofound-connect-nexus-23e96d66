@@ -1,59 +1,92 @@
-import Fastify from "fastify";
-import cors from "@fastify/cors";
-import rateLimit from "@fastify/rate-limit";
-import { prisma } from "./lib/prisma.js";
+import "dotenv/config";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { serve } from "@hono/node-server";
+import { db } from "./db/index.js";
+import { sql } from "drizzle-orm";
+import { logger } from "./lib/logger.js";
+import { securityHeaders } from "./middleware/security.js";
+import { authRateLimit, apiRateLimit } from "./middleware/rateLimit.js";
+import { globalErrorHandler } from "./middleware/errorHandler.js";
+import { requestId } from "./middleware/requestId.js";
 import { authRoutes } from "./routes/auth.js";
 import { profilesRoutes } from "./routes/profiles.js";
 import { settingsRoutes } from "./routes/settings.js";
 import { connectionsRoutes } from "./routes/connections.js";
 import { opportunitiesRoutes } from "./routes/opportunities.js";
 import { messagesRoutes } from "./routes/messages.js";
+import { notificationsRoutes } from "./routes/notifications.js";
+import { startupsRoutes } from "./routes/startups.js";
+import { activityRoutes } from "./routes/activity.js";
+import { searchRoutes } from "./routes/search.js";
+import { ensureIndexes } from "./lib/search.js";
+import { oauthRoutes } from "./routes/oauth.js";
 
 const PORT = parseInt(process.env.PORT ?? "3001", 10);
 
-async function main() {
-  const app = Fastify({ logger: true });
+const app = new Hono();
 
-  await app.register(cors, {
-    origin: process.env.CORS_ORIGIN ?? "http://localhost:8080",
-    credentials: true,
-  });
+// ── Global Error Handler ─────────────────────────────────────────────────────
+app.onError(globalErrorHandler);
 
-  await app.register(rateLimit, {
-    max: 100,
-    timeWindow: "1 minute",
-  });
+// ── Global Middleware ─────────────────────────────────────────────────────────
 
-  app.get("/health", async () => ({ status: "ok", timestamp: new Date().toISOString() }));
+// Request ID — must be first so all logs can reference it
+app.use("*", requestId);
 
-  app.get("/health/db", async (_, reply) => {
-    try {
-      await prisma.$queryRaw`SELECT 1`;
-      return reply.send({ status: "ok", database: "connected" });
-    } catch (err) {
-      app.log.error(err, "Database health check failed");
-      return reply.status(503).send({
-        status: "error",
-        database: "disconnected",
-        hint: "Run: npm run db:push",
-      });
-    }
-  });
+// Request logging via Pino
+app.use("*", async (c, next) => {
+  const start = Date.now();
+  await next();
+  const ms = Date.now() - start;
+  logger.info({ method: c.req.method, path: c.req.path, status: c.res.status, ms }, "request");
+});
 
-  await app.register(authRoutes, { prefix: "/api/auth" });
-  await app.register(profilesRoutes, { prefix: "/api/profiles" });
-  await app.register(settingsRoutes, { prefix: "/api/settings" });
-  await app.register(connectionsRoutes, { prefix: "/api/connections" });
-  await app.register(opportunitiesRoutes, { prefix: "/api/opportunities" });
-  await app.register(messagesRoutes, { prefix: "/api/messages" });
+// Security headers on all responses
+app.use("*", securityHeaders);
 
+// CORS
+app.use("*", cors({
+  origin: process.env.CORS_ORIGIN ?? "http://localhost:8080",
+  credentials: true,
+}));
+
+// Rate limiting: strict on auth, general on API
+app.use("/api/auth/*", authRateLimit);
+app.use("/api/*", apiRateLimit);
+
+// ── Health ────────────────────────────────────────────────────────────────────
+app.get("/health", (c) => c.json({ status: "ok", timestamp: new Date().toISOString() }));
+
+app.get("/health/db", (c) => {
   try {
-    await app.listen({ port: PORT, host: "0.0.0.0" });
-    console.log(`CoFounderBay API running at http://localhost:${PORT}`);
+    db.get(sql`SELECT 1`);
+    return c.json({ status: "ok", database: "connected" });
   } catch (err) {
-    app.log.error(err);
-    process.exit(1);
+    logger.error({ err }, "Database health check failed");
+    return c.json({ status: "error", database: "disconnected", hint: "Run: npm run db:migrate" }, 503);
   }
-}
+});
 
-main();
+// ── Routes ────────────────────────────────────────────────────────────────────
+app.route("/api/auth", authRoutes);
+app.route("/api/profiles", profilesRoutes);
+app.route("/api/settings", settingsRoutes);
+app.route("/api/connections", connectionsRoutes);
+app.route("/api/opportunities", opportunitiesRoutes);
+app.route("/api/messages", messagesRoutes);
+app.route("/api/notifications", notificationsRoutes);
+app.route("/api/startups", startupsRoutes);
+app.route("/api/activity", activityRoutes);
+app.route("/api/search", searchRoutes);
+app.route("/api/auth", oauthRoutes);
+
+// ── 404 fallback ─────────────────────────────────────────────────────────────
+app.notFound((c) => c.json({ error: "Not found" }, 404));
+
+// ── Start ─────────────────────────────────────────────────────────────────────
+logger.info({ port: PORT }, "CoFounder Connect API starting");
+serve({ fetch: app.fetch, port: PORT });
+
+// Warm Orama search indexes in the background after server boot
+setImmediate(() => { ensureIndexes().catch(() => { /* already logged inside */ }); });

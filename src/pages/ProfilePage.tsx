@@ -1,5 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
+import { useAuth } from "@/contexts/AuthContext";
+import { api, type ProfileData as ApiProfileData } from "@/lib/api";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -165,13 +169,86 @@ const typeColors: Record<string, string> = {
 };
 
 export default function ProfilePage() {
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileData>(initialProfile);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<ProfileData>(initialProfile);
   const [newSkill, setNewSkill] = useState("");
   const [newInterest, setNewInterest] = useState("");
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = () => { setProfile(draft); setEditing(false); };
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate("/login", { replace: true });
+    }
+  }, [authLoading, isAuthenticated, navigate]);
+
+  const fetchProfile = useCallback(async () => {
+    try {
+      const res = await api.profiles.getMe();
+      const p = res.profile;
+      const merged: ProfileData = {
+        name: p?.name ?? user?.name ?? initialProfile.name,
+        headline: p?.headline ?? initialProfile.headline,
+        bio: p?.bio ?? initialProfile.bio,
+        location: p?.location ?? initialProfile.location,
+        availability: p?.availability ?? initialProfile.availability,
+        email: user?.email ?? initialProfile.email,
+        linkedin: p?.linkedin ?? initialProfile.linkedin,
+        github: p?.github ?? initialProfile.github,
+        website: p?.website ?? initialProfile.website,
+        skills: p?.skills?.length ? p.skills : initialProfile.skills,
+        interests: p?.interests?.length ? p.interests : initialProfile.interests,
+        stage: p?.stage ?? initialProfile.stage,
+        commitment: p?.commitment ?? initialProfile.commitment,
+        compensation: p?.compensation ?? initialProfile.compensation,
+        lookingFor: p?.lookingFor ?? initialProfile.lookingFor,
+        yearsExperience: initialProfile.yearsExperience,
+        education: initialProfile.education,
+        languages: initialProfile.languages,
+      };
+      setProfile(merged);
+      setDraft(merged);
+    } catch {
+      // Use defaults if API unavailable
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (isAuthenticated) fetchProfile();
+  }, [isAuthenticated, fetchProfile]);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await api.profiles.updateMe({
+        name: draft.name,
+        headline: draft.headline,
+        bio: draft.bio,
+        location: draft.location,
+        availability: draft.availability,
+        skills: draft.skills,
+        interests: draft.interests,
+        stage: draft.stage,
+        commitment: draft.commitment,
+        compensation: draft.compensation,
+        lookingFor: draft.lookingFor,
+        linkedin: draft.linkedin,
+        github: draft.github,
+        website: draft.website,
+      });
+      setProfile(draft);
+      setEditing(false);
+    } catch {
+      // Save failed — keep editing
+    } finally {
+      setIsSaving(false);
+    }
+  };
   const handleCancel = () => { setDraft(profile); setEditing(false); };
 
   const addSkill = () => {
@@ -220,7 +297,7 @@ export default function ProfilePage() {
           </Button>
         ) : (
           <div className="flex gap-2">
-            <Button size="sm" className="gap-2" onClick={handleSave}><Save className="h-3.5 w-3.5" /> Save</Button>
+            <Button size="sm" className="gap-2" onClick={handleSave} disabled={isSaving}>{isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Save</Button>
             <Button variant="outline" size="sm" className="gap-2" onClick={handleCancel}><X className="h-3.5 w-3.5" /> Cancel</Button>
           </div>
         )

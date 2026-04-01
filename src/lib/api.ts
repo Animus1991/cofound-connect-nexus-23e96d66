@@ -1,19 +1,19 @@
 /**
- * API client for CoFounderBay backend
- * Uses VITE_API_URL from env (default: http://localhost:3001)
+ * API client for CoFounder Connect backend
+ * Uses VITE_API_URL from env (default: http://localhost:3002)
  */
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3002";
 
 let getToken: (() => string | null | undefined) | null = null;
 let getRefreshToken: (() => string | null | undefined) | null = null;
-let onTokenRefreshed: ((token: string) => void) | null = null;
+let onTokenRefreshed: ((token: string, refreshToken?: string) => void) | null = null;
 let onUnauthorized: (() => void) | null = null;
 
 export function configureApi(config: {
   getToken?: () => string | null | undefined;
   getRefreshToken?: () => string | null | undefined;
-  onTokenRefreshed?: (token: string) => void;
+  onTokenRefreshed?: (token: string, refreshToken?: string) => void;
   onUnauthorized?: () => void;
 }) {
   getToken = config.getToken ?? null;
@@ -61,6 +61,15 @@ async function request<T>(
   const data = await res.json().catch(() => ({}));
 
   if (res.status === 401) {
+    // For unauthenticated requests (login, register, etc.) return the real error
+    if (skipAuth) {
+      throw {
+        error: (data as ApiError).error ?? "Invalid credentials",
+        details: (data as ApiError).details,
+      } as ApiError;
+    }
+
+    // For authenticated requests, attempt token refresh
     const refreshToken = getRefreshToken?.();
     if (refreshToken && onTokenRefreshed) {
       try {
@@ -71,8 +80,10 @@ async function request<T>(
         });
         const refreshData = await refreshRes.json().catch(() => ({}));
         if (refreshRes.ok && (refreshData as { token?: string }).token) {
-          onTokenRefreshed((refreshData as { token: string }).token);
-          return request(path, { ...options, token: (refreshData as { token: string }).token });
+          const newAccessToken = (refreshData as { token: string; refreshToken?: string }).token;
+          const newRefreshToken = (refreshData as { token: string; refreshToken?: string }).refreshToken;
+          onTokenRefreshed(newAccessToken, newRefreshToken);
+          return request(path, { ...options, token: newAccessToken });
         }
       } catch {
         /* fall through to onUnauthorized */
@@ -266,5 +277,84 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ content }),
       }),
+  },
+  notifications: {
+    list: () =>
+      request<{
+        notifications: Array<{
+          id: string;
+          type: "connection_request" | "connection_accepted" | "new_message";
+          title: string;
+          body: string;
+          createdAt: string;
+          read: boolean;
+          metadata: Record<string, unknown>;
+        }>;
+        unreadCount: number;
+      }>("/api/notifications"),
+  },
+  activity: {
+    list: (limit = 20) =>
+      request<{
+        activity: Array<{
+          id: string;
+          action: string;
+          label: string;
+          context: Record<string, unknown>;
+          createdAt: string;
+        }>;
+      }>(`/api/activity?limit=${limit}`),
+  },
+  startups: {
+    getMine: () =>
+      request<{
+        startup: {
+          id: string;
+          ownerId: string;
+          name: string;
+          tagline: string | null;
+          description: string | null;
+          logoUrl: string | null;
+          websiteUrl: string | null;
+          industry: string | null;
+          stage: string | null;
+          teamSize: number;
+          fundingStatus: string | null;
+          techStack: string[];
+          tags: string[];
+          isPublic: boolean;
+          createdAt: string;
+          updatedAt: string;
+          members: Array<{ userId: string; role: string; title: string | null; user: { id: string; name: string | null; email: string } | null }>;
+        } | null;
+      }>("/api/startups/mine"),
+    create: (data: {
+      name: string;
+      tagline?: string;
+      description?: string;
+      industry?: string;
+      stage?: string;
+      techStack?: string[];
+      tags?: string[];
+      isPublic?: boolean;
+    }) =>
+      request<{ startup: { id: string; name: string } }>("/api/startups", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    update: (id: string, data: Record<string, unknown>) =>
+      request<{ startup: { id: string; name: string } }>(`/api/startups/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    getById: (id: string) =>
+      request<{ startup: { id: string; name: string; tagline: string | null; description: string | null; stage: string | null; techStack: string[]; tags: string[]; members: Array<{ userId: string; role: string }> } }>(`/api/startups/${id}`),
+  },
+  search: {
+    query: (q: string, type: "all" | "users" | "opportunities" = "all", limit = 20) =>
+      request<{
+        users: Array<{ id: string; name: string; headline: string; skills: string; location: string; stage: string; score: number }>;
+        opportunities: Array<{ id: string; title: string; description: string; skills: string; type: string; stage: string; location: string; orgName: string; score: number }>;
+      }>(`/api/search?q=${encodeURIComponent(q)}&type=${type}&limit=${limit}`),
   },
 };

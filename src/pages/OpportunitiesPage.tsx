@@ -1,5 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
+import { useAuth } from "@/contexts/AuthContext";
+import { api } from "@/lib/api";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +23,7 @@ import {
   Plus,
   Building2,
   Coins,
+  Loader2,
 } from "lucide-react";
 
 interface Opportunity {
@@ -197,24 +202,125 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 };
 
 export default function OpportunitiesPage() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("listings");
   const [searchQuery, setSearchQuery] = useState("");
+  const [opportunities, setOpportunities] = useState(mockOpportunities);
+  const [applications, setApplications] = useState(mockApplications);
   const [proposals, setProposals] = useState(mockProposals);
+  const [searchResults, setSearchResults] = useState<Opportunity[] | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const debouncedQuery = useDebounce(searchQuery, 350);
 
-  const filteredOpportunities = mockOpportunities.filter(
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate("/login", { replace: true });
+    }
+  }, [authLoading, isAuthenticated, navigate]);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const [listRes, appRes, propRes] = await Promise.allSettled([
+        api.opportunities.list(),
+        api.opportunities.getApplications(),
+        api.opportunities.getReceivedApplications(),
+      ]);
+      if (listRes.status === "fulfilled" && listRes.value.opportunities.length > 0) {
+        setOpportunities(listRes.value.opportunities.map((o) => ({
+          id: o.id,
+          title: o.title,
+          orgName: o.orgName,
+          orgInitials: o.orgName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase(),
+          type: (o.type as Opportunity["type"]) || "job",
+          description: o.description ?? "",
+          skills: o.skills ?? [],
+          location: o.location ?? "Remote",
+          compensation: o.compensation ?? "",
+          stage: o.stage ?? "",
+          posted: new Date(o.createdAt).toLocaleDateString(),
+          applicants: o.applicants,
+        })));
+      }
+      if (appRes.status === "fulfilled" && appRes.value.applications.length > 0) {
+        setApplications(appRes.value.applications.map((a) => ({
+          id: a.id,
+          opportunityTitle: a.opportunityTitle,
+          orgName: a.orgName,
+          status: (a.status as Application["status"]) || "pending",
+          appliedDate: new Date(a.createdAt).toLocaleDateString(),
+          message: a.message ?? "",
+        })));
+      }
+      if (propRes.status === "fulfilled" && propRes.value.proposals.length > 0) {
+        setProposals(propRes.value.proposals.map((p) => ({
+          id: p.id,
+          fromName: p.fromName,
+          fromInitials: p.fromInitials,
+          fromRole: p.fromRole,
+          scope: p.scope,
+          timeframe: p.timeframe,
+          compensation: p.compensation,
+          status: (p.status as Proposal["status"]) || "pending",
+          date: new Date(p.createdAt).toLocaleDateString(),
+        })));
+      }
+    } catch { /* use mock data */ }
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) fetchData();
+  }, [isAuthenticated, fetchData]);
+
+  // Live Orama-powered backend search
+  useEffect(() => {
+    if (debouncedQuery.trim().length < 2) {
+      setSearchResults(null);
+      return;
+    }
+    let cancelled = false;
+    setIsSearching(true);
+    api.search.query(debouncedQuery.trim(), "opportunities", 30)
+      .then(({ opportunities: hits }) => {
+        if (cancelled) return;
+        setSearchResults(hits.map((h) => ({
+          id: h.id,
+          title: h.title,
+          orgName: h.orgName || "Unknown",
+          orgInitials: (h.orgName || "?").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase(),
+          type: (h.type as Opportunity["type"]) || "job",
+          description: h.description,
+          skills: h.skills ? h.skills.split(" ").filter(Boolean) : [],
+          location: h.location || "Remote",
+          compensation: "",
+          stage: h.stage || "",
+          posted: "",
+          applicants: 0,
+        })));
+      })
+      .catch(() => setSearchResults(null))
+      .finally(() => { if (!cancelled) setIsSearching(false); });
+    return () => { cancelled = true; };
+  }, [debouncedQuery]);
+
+  const filteredOpportunities = (searchResults !== null ? searchResults : opportunities).filter(
     (o) =>
-      o.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      o.orgName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      o.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()))
+      searchResults !== null
+        ? true
+        : o.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          o.orgName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          o.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const handleAcceptProposal = (id: string) => {
+  const handleAcceptProposal = async (id: string) => {
+    try { await api.opportunities.updateApplicationStatus(id, "accepted"); } catch { /* ignore */ }
     setProposals((prev) =>
       prev.map((p) => (p.id === id ? { ...p, status: "accepted" as const } : p))
     );
   };
 
-  const handleDeclineProposal = (id: string) => {
+  const handleDeclineProposal = async (id: string) => {
+    try { await api.opportunities.updateApplicationStatus(id, "rejected"); } catch { /* ignore */ }
     setProposals((prev) =>
       prev.map((p) => (p.id === id ? { ...p, status: "declined" as const } : p))
     );
@@ -259,10 +365,11 @@ export default function OpportunitiesPage() {
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Search roles, skills, companies..."
-                  className="pl-10"
+                  className="pl-10 pr-9"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
+                {isSearching && <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground animate-spin" />}
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" className="gap-2">
@@ -367,7 +474,7 @@ export default function OpportunitiesPage() {
           {/* Applications */}
           <TabsContent value="applications">
             <div className="space-y-4">
-              {mockApplications.map((app) => {
+              {applications.map((app) => {
                 const status = statusConfig[app.status];
                 return (
                   <div

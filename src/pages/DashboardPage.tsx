@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
+import { useAuth } from "@/contexts/AuthContext";
+import { api } from "@/lib/api";
 import { StatSkeleton, CardSkeleton, ListItemSkeleton } from "@/components/SkeletonLoaders";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Button } from "@/components/ui/button";
@@ -38,13 +40,26 @@ const upcomingEvents = [
   { title: "SaaS Growth Workshop", date: "Mar 15, 2026", type: "Online", attendees: 30 },
 ];
 
-const activityFeed = [
-  { type: "match", text: "New match with Alex Chen (92% compatibility)", time: "10m ago", icon: Zap },
-  { type: "view", text: "Your profile was viewed 12 times today", time: "1h ago", icon: Eye },
-  { type: "intro", text: "Elena V. sent you an intro request", time: "2h ago", icon: MessageSquare },
-  { type: "saved", text: "James Okafor saved your profile", time: "5h ago", icon: Bookmark },
-  { type: "milestone", text: "You reached 100+ profile views!", time: "1d ago", icon: Flame },
-];
+type ActivityItem = { id: string; label: string; action: string; createdAt: string };
+
+const ACTION_ICONS: Record<string, React.ElementType> = {
+  connection_made: Users,
+  intro_sent: MessageSquare,
+  opportunity_posted: Rocket,
+  application_sent: ArrowUpRight,
+  message_sent: MessageSquare,
+  profile_updated: Star,
+  startup_created: Flame,
+  startup_updated: Flame,
+};
+
+function relativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  if (diff < 60_000) return "just now";
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
+  return `${Math.floor(diff / 86_400_000)}d ago`;
+}
 
 const todoItems = [
   { label: "Add 3 more skills to your profile", done: true },
@@ -65,17 +80,58 @@ const fade = (i: number) => ({
   transition: { delay: i * 0.04, duration: 0.4, ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number] },
 });
 
+interface DashboardStats {
+  connections: number;
+  pendingRequests: number;
+  suggestions: number;
+}
+
 export default function DashboardPage() {
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [savedMatches, setSavedMatches] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState<DashboardStats>({ connections: 0, pendingRequests: 0, suggestions: 0 });
+  const [activityItems, setActivityItems] = useState<ActivityItem[]>([]);
   const completedTodos = todoItems.filter((t) => t.done).length;
 
   useNotifications();
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(timer);
+    if (!authLoading && !isAuthenticated) {
+      navigate("/login", { replace: true });
+    }
+  }, [authLoading, isAuthenticated, navigate]);
+
+  const loadStats = useCallback(async () => {
+    try {
+      const [connsRes, reqsRes, suggestedRes, activityRes] = await Promise.allSettled([
+        api.connections.list(),
+        api.connections.getRequests(),
+        api.connections.getSuggested(),
+        api.activity.list(5),
+      ]);
+      setStats({
+        connections: connsRes.status === "fulfilled" ? connsRes.value.connections.length : 0,
+        pendingRequests: reqsRes.status === "fulfilled" ? reqsRes.value.incoming.length : 0,
+        suggestions: suggestedRes.status === "fulfilled" ? suggestedRes.value.suggested.length : 0,
+      });
+      if (activityRes.status === "fulfilled") {
+        setActivityItems(activityRes.value.activity);
+      }
+    } catch {
+      // keep zeros — mock values used in display fallback
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) loadStats();
+    else if (!authLoading) setIsLoading(false);
+  }, [isAuthenticated, authLoading, loadStats]);
+
+  const displayName = user?.name?.split(" ")[0] ?? "there";
 
   const toggleSave = (name: string) => {
     setSavedMatches((prev) => prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]);
@@ -102,11 +158,12 @@ export default function DashboardPage() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                   <h2 className="font-display text-xl sm:text-2xl font-semibold text-foreground">
-                    Welcome back, Jane
+                    Welcome back, {displayName}
                   </h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    You have <span className="text-primary font-medium">3 new matches</span> and{" "}
-                    <span className="font-medium text-foreground">2 pending intro requests</span>.
+                    You have{" "}
+                    <span className="text-primary font-medium">{stats.suggestions} suggested matches</span> and{" "}
+                    <span className="font-medium text-foreground">{stats.pendingRequests} pending intro request{stats.pendingRequests !== 1 ? "s" : ""}.</span>
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -127,10 +184,10 @@ export default function DashboardPage() {
             {/* Stats */}
             <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
               {[
-                { label: "Profile Views", value: "128", change: "+12%", icon: TrendingUp },
-                { label: "Matches", value: "24", change: "+3 this week", icon: Zap },
-                { label: "Intro Requests", value: "7", change: "2 pending", icon: ArrowUpRight },
-                { label: "Connections", value: "42", change: "+5 this month", icon: Users },
+                { label: "Profile Views", value: "—", change: "Coming soon", icon: TrendingUp },
+                { label: "Matches", value: String(stats.suggestions), change: `${stats.suggestions} suggested`, icon: Zap },
+                { label: "Intro Requests", value: String(stats.pendingRequests), change: stats.pendingRequests > 0 ? `${stats.pendingRequests} pending` : "None pending", icon: ArrowUpRight },
+                { label: "Connections", value: String(stats.connections), change: stats.connections > 0 ? `${stats.connections} total` : "Start connecting", icon: Users },
               ].map((stat, i) => (
                 <motion.div key={stat.label} {...fade(i + 1)} className="rounded-xl border border-border bg-card p-4">
                   <div className="flex items-center justify-between mb-2.5">
@@ -214,17 +271,22 @@ export default function DashboardPage() {
               <motion.div {...fade(7)} className="rounded-xl border border-border bg-card p-5">
                 <h3 className="font-display text-sm font-semibold text-foreground mb-3">Recent Activity</h3>
                 <div className="space-y-2.5">
-                  {activityFeed.map((activity, i) => (
-                    <div key={i} className="flex items-start gap-2.5">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-secondary">
-                        <activity.icon className="h-3.5 w-3.5 text-muted-foreground" />
+                  {activityItems.length > 0 ? activityItems.map((item) => {
+                    const Icon = ACTION_ICONS[item.action] ?? Zap;
+                    return (
+                      <div key={item.id} className="flex items-start gap-2.5">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-secondary">
+                          <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-foreground leading-snug">{item.label}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">{relativeTime(item.createdAt)}</p>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground leading-snug">{activity.text}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">{activity.time}</p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  }) : (
+                    <p className="text-xs text-muted-foreground py-3 text-center">No recent activity yet. Start connecting!</p>
+                  )}
                 </div>
               </motion.div>
 

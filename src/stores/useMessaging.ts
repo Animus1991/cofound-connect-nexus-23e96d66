@@ -4,8 +4,9 @@
  * Shared types, state, and actions — no duplication.
  */
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { AI_AGENTS, getAIResponse, type AIAgent } from "@/services/aiService";
+import { api } from "@/lib/api";
 
 // ── Shared Types ───────────────────────────────────────────
 
@@ -78,7 +79,7 @@ const initialMessages: Record<string, UnifiedMessage[]> = {
     { id: "m5", role: "user", content: "That sounds great! Let's schedule a call.", timestamp: new Date("2025-01-15T09:40:00"), reactions: [] },
   ],
   c2: [
-    { id: "m1", role: "user", content: "Hi Jane, I came across your startup through CoFounderBay.", timestamp: new Date("2025-01-14T10:00:00"), reactions: [] },
+    { id: "m1", role: "user", content: "Hi Jane, I came across your startup through CoFounder Connect.", timestamp: new Date("2025-01-14T10:00:00"), reactions: [] },
     { id: "m2", role: "assistant", content: "Hi Maria! Thanks for reaching out. Happy to share more details.", timestamp: new Date("2025-01-14T10:05:00"), status: "delivered", reactions: [] },
     { id: "m3", role: "user", content: "I've reviewed the deck, very impressive metrics.", timestamp: new Date("2025-01-15T08:00:00"), reactions: [], attachment: { name: "pitch_deck_review.pdf", type: "file", size: "2.3 MB" } },
   ],
@@ -101,13 +102,52 @@ function notify() {
   _listeners.forEach((l) => l());
 }
 
+// ── Helpers ────────────────────────────────────────────────
+/** Detect whether a conversation ID comes from the backend (UUID) vs mock (c1, c2…). */
+function isRealConvo(id: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) ||
+    // also handle nanoid-style short IDs the backend may use (alphanum, 12+ chars)
+    (id.length >= 12 && !id.startsWith("c") && !id.startsWith("agent-"));
+}
+
+// ── Hydration flag ──────────────────────────────────────────
+let _hydrated = false;
+
+async function hydrateFromApi() {
+  if (_hydrated) return;
+  _hydrated = true;
+  try {
+    const res = await api.messages.getConversations();
+    if (res.conversations.length > 0) {
+      const apiConvos: Conversation[] = res.conversations.map((c) => ({
+        id: c.id,
+        type: "human" as const,
+        name: c.otherUser?.name ?? "Unknown",
+        initials: (c.otherUser?.name ?? "??").split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase(),
+        role: "",
+        lastMessage: c.lastMessage?.content ?? "",
+        time: c.lastMessage?.createdAt ? new Date(c.lastMessage.createdAt).toLocaleDateString() : "",
+        unread: 0,
+        online: false,
+        typing: false,
+      }));
+      // Merge: API conversations first, then keep mock ones that don't clash
+      const apiIds = new Set(apiConvos.map((c) => c.id));
+      _conversations = [...apiConvos, ..._conversations.filter((c) => !apiIds.has(c.id))];
+      notify();
+    }
+  } catch {
+    // API unavailable — keep mock data
+  }
+}
+
 // ── Hook ───────────────────────────────────────────────────
 
 export function useMessaging() {
   const [, forceUpdate] = useState(0);
 
-  // Subscribe to changes
-  const subscribe = useCallback(() => {
+  // Subscribe to singleton state changes and clean up on unmount
+  useEffect(() => {
     const listener = () => forceUpdate((n) => n + 1);
     _listeners.push(listener);
     return () => {
@@ -115,12 +155,14 @@ export function useMessaging() {
     };
   }, []);
 
-  // Register on mount
-  useState(() => {
-    const unsub = subscribe();
-    // Cleanup via effect would be ideal but useState initializer works for singleton
-    return unsub;
-  });
+  // Hydrate from API once
+  const hydrated = useRef(false);
+  useEffect(() => {
+    if (!hydrated.current) {
+      hydrated.current = true;
+      hydrateFromApi();
+    }
+  }, []);
 
   const conversations = _conversations;
   const messages = _messages;
@@ -163,9 +205,31 @@ export function useMessaging() {
     [messages]
   );
 
+  const loadMessages = useCallback(async (convoId: string) => {
+    if (!isRealConvo(convoId)) return; // mock convos already have data in _messages
+    if (_messages[convoId]) return; // already loaded
+    try {
+      const { messages: msgs } = await api.messages.getConversation(convoId);
+      const mapped: UnifiedMessage[] = msgs.map((m) => ({
+        id: m.id,
+        role: m.fromMe ? "assistant" : "user", // fromMe = sent by current user
+        content: m.content,
+        timestamp: new Date(m.createdAt),
+        status: "read" as const,
+        reactions: [],
+      }));
+      _messages = { ..._messages, [convoId]: mapped };
+      notify();
+    } catch {
+      // keep empty array as fallback
+      _messages = { ..._messages, [convoId]: [] };
+      notify();
+    }
+  }, []);
+
   const sendMessage = useCallback(
-    (convoId: string, content: string, attachment?: Attachment) => {
-      const msg: UnifiedMessage = {
+    async (convoId: string, content: string, attachment?: Attachment) => {
+      const optimisticMsg: UnifiedMessage = {
         id: `msg-${Date.now()}`,
         role: "assistant", // "assistant" = current user in human convos (own messages)
         content,
@@ -174,15 +238,42 @@ export function useMessaging() {
         reactions: [],
         attachment,
       };
-      _messages = { ..._messages, [convoId]: [...(_messages[convoId] || []), msg] };
 
-      // Update lastMessage on conversation
+      // Optimistic update first
+      _messages = { ..._messages, [convoId]: [...(_messages[convoId] || []), optimisticMsg] };
       _conversations = _conversations.map((c) =>
         c.id === convoId ? { ...c, lastMessage: content, time: "Just now" } : c
       );
-
       notify();
-      return msg;
+
+      // Fire real API call for backend conversations
+      if (isRealConvo(convoId)) {
+        try {
+          const sent = await api.messages.sendMessage(convoId, content);
+          // Replace optimistic message with real server-confirmed message
+          const confirmedMsg: UnifiedMessage = {
+            id: sent.id,
+            role: "assistant",
+            content: sent.content,
+            timestamp: new Date(sent.createdAt),
+            status: "delivered" as const,
+            reactions: [],
+          };
+          _messages = {
+            ..._messages,
+            [convoId]: [
+              ...(_messages[convoId] || []).filter((m) => m.id !== optimisticMsg.id),
+              confirmedMsg,
+            ],
+          };
+          notify();
+          return confirmedMsg;
+        } catch {
+          // Keep optimistic message with "sent" status — UI degradation is acceptable
+        }
+      }
+
+      return optimisticMsg;
     },
     []
   );
@@ -282,6 +373,7 @@ export function useMessaging() {
     totalUnread,
     pendingIntros,
     getMessages,
+    loadMessages,
     sendMessage,
     sendAIMessage,
     toggleReaction,

@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
+import { useAuth } from "@/contexts/AuthContext";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -78,12 +81,89 @@ const mockSuggested: SuggestedConnection[] = [
 ];
 
 export default function NetworkPage() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("connections");
   const [searchQuery, setSearchQuery] = useState("");
+  const [connections, setConnections] = useState(mockConnections);
   const [pendingRequests, setPendingRequests] = useState(mockPendingRequests);
+  const [suggested, setSuggested] = useState(mockSuggested);
   const [connectedIds, setConnectedIds] = useState<string[]>([]);
 
-  const filteredConnections = mockConnections.filter((c) =>
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate("/login", { replace: true });
+    }
+  }, [authLoading, isAuthenticated, navigate]);
+
+  // Fetch real data from API (falls back to mock data on error)
+  const fetchData = useCallback(async () => {
+    try {
+      const [connRes, reqRes, sugRes] = await Promise.allSettled([
+        api.connections.list(),
+        api.connections.getRequests(),
+        api.connections.getSuggested(),
+      ]);
+      if (connRes.status === "fulfilled" && connRes.value.connections.length > 0) {
+        setConnections(connRes.value.connections.map((c) => ({
+          id: c.id,
+          name: c.name,
+          initials: c.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase(),
+          role: c.headline ?? "",
+          company: "",
+          location: c.location ?? "",
+          connectedSince: c.connectedSince,
+          mutualConnections: 0,
+          online: false,
+          skills: c.skills ?? [],
+        })));
+      }
+      if (reqRes.status === "fulfilled") {
+        const mapped: PendingRequest[] = [
+          ...reqRes.value.incoming.map((r) => ({
+            id: r.id,
+            name: r.name,
+            initials: r.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase(),
+            role: r.headline ?? "",
+            message: r.message ?? "",
+            date: new Date(r.createdAt).toLocaleDateString(),
+            mutualConnections: 0,
+            direction: "incoming" as const,
+          })),
+          ...reqRes.value.outgoing.map((r) => ({
+            id: r.id,
+            name: r.name,
+            initials: r.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase(),
+            role: r.headline ?? "",
+            message: r.message ?? "",
+            date: new Date(r.createdAt).toLocaleDateString(),
+            mutualConnections: 0,
+            direction: "outgoing" as const,
+          })),
+        ];
+        if (mapped.length > 0) setPendingRequests(mapped);
+      }
+      if (sugRes.status === "fulfilled" && sugRes.value.suggested.length > 0) {
+        setSuggested(sugRes.value.suggested.map((s) => ({
+          id: s.id,
+          name: s.name,
+          initials: s.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase(),
+          role: s.headline ?? "",
+          company: "",
+          matchScore: s.matchScore,
+          reason: s.reason,
+          mutualConnections: s.mutualConnections,
+          skills: s.skills ?? [],
+        })));
+      }
+    } catch { /* use mock data */ }
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) fetchData();
+  }, [isAuthenticated, fetchData]);
+
+  const filteredConnections = connections.filter((c) =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.role.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -91,15 +171,19 @@ export default function NetworkPage() {
   const incomingRequests = pendingRequests.filter((r) => r.direction === "incoming");
   const outgoingRequests = pendingRequests.filter((r) => r.direction === "outgoing");
 
-  const handleAccept = (id: string) => {
+  const handleAccept = async (id: string) => {
+    try { await api.connections.acceptRequest(id); } catch { /* ignore */ }
+    setPendingRequests((prev) => prev.filter((r) => r.id !== id));
+    fetchData();
+  };
+
+  const handleDecline = async (id: string) => {
+    try { await api.connections.declineRequest(id); } catch { /* ignore */ }
     setPendingRequests((prev) => prev.filter((r) => r.id !== id));
   };
 
-  const handleDecline = (id: string) => {
-    setPendingRequests((prev) => prev.filter((r) => r.id !== id));
-  };
-
-  const handleConnect = (id: string) => {
+  const handleConnect = async (id: string) => {
+    try { await api.connections.requestConnection(id); } catch { /* ignore */ }
     setConnectedIds((prev) => [...prev, id]);
   };
 
@@ -109,10 +193,10 @@ export default function NetworkPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: "Connections", value: mockConnections.length, icon: UserCheck },
+            { label: "Connections", value: connections.length, icon: UserCheck },
             { label: "Pending", value: incomingRequests.length, icon: Clock },
             { label: "Sent", value: outgoingRequests.length, icon: UserPlus },
-            { label: "Suggested", value: mockSuggested.length, icon: Sparkles },
+            { label: "Suggested", value: suggested.length, icon: Sparkles },
           ].map((stat) => (
             <div key={stat.label} className="rounded-xl border border-border/50 bg-card-gradient p-4 flex items-center gap-3 hover-lift">
               <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -280,7 +364,7 @@ export default function NetworkPage() {
           {/* Suggested Tab */}
           <TabsContent value="suggested" className="mt-4">
             <div className="grid gap-4 md:grid-cols-2">
-              {mockSuggested.map((s) => (
+              {suggested.map((s) => (
                 <motion.div
                   key={s.id}
                   initial={{ opacity: 0, y: 8 }}
