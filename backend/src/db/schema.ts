@@ -583,3 +583,194 @@ export const tenantSocialLinks = sqliteTable("tenant_social_links", {
 }, (table) => [
   uniqueIndex("idx_tenant_social_tenant").on(table.tenantId),
 ]);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ── ENTERPRISE SSO LAYER ──────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── Identity Providers ────────────────────────────────────────────────────
+// Stores SAML / OIDC provider configuration per tenant.
+
+export const identityProviders = sqliteTable("identity_providers", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  /** oidc | saml | google_workspace | microsoft_entra | okta | ping | custom */
+  providerType: text("provider_type").notNull().default("oidc"),
+  /** Human-readable display name, e.g. "Athens University SSO" */
+  providerName: text("provider_name").notNull(),
+  /** OIDC: issuer URL  /  SAML: entityId */
+  issuerUrl: text("issuer_url"),
+  /** OIDC client_id */
+  clientId: text("client_id"),
+  /** OIDC client_secret — store encrypted in production */
+  clientSecretEncrypted: text("client_secret_encrypted"),
+  /** SAML: URL to IdP metadata XML */
+  metadataUrl: text("metadata_url"),
+  /** SAML: raw metadata XML (fallback if URL unreachable) */
+  metadataXml: text("metadata_xml"),
+  /** OIDC: explicit authorization_endpoint override */
+  authorizationEndpoint: text("authorization_endpoint"),
+  /** OIDC: explicit token_endpoint override */
+  tokenEndpoint: text("token_endpoint"),
+  /** OIDC: explicit userinfo_endpoint override */
+  userinfoEndpoint: text("userinfo_endpoint"),
+  /** JSON array of OIDC scopes, e.g. ["openid","email","profile","groups"] */
+  scopes: text("scopes").notNull().default('["openid","email","profile"]'),
+  /** Text shown on the SSO login button, e.g. "Sign in with Athens University" */
+  loginButtonText: text("login_button_text"),
+  /** Logo URL for the SSO login button */
+  loginButtonLogoUrl: text("login_button_logo_url"),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  /** JSON: provider-specific extra config (attribute mappings, claim overrides, etc.) */
+  extraConfig: text("extra_config").notNull().default("{}"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index("idx_identity_providers_tenant").on(table.tenantId),
+]);
+
+// ── Tenant SSO Config ─────────────────────────────────────────────────────
+// SSO access mode, provisioning policy, and session rules per tenant.
+
+export const tenantSsoConfigs = sqliteTable("tenant_sso_configs", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  /** none | optional | required */
+  ssoMode: text("sso_mode").notNull().default("none"),
+  /** JSON array of email domains restricted to this tenant, e.g. ["uni.edu","corp.com"] */
+  allowedDomains: text("allowed_domains").notNull().default("[]"),
+  /** Auto-create platform user on first SSO login (JIT provisioning) */
+  autoProvisionEnabled: integer("auto_provision_enabled", { mode: "boolean" }).notNull().default(true),
+  /** Default platform role for JIT-provisioned users */
+  defaultRole: text("default_role").notNull().default("founder"),
+  /** Show SSO login button on /login for all users (not only domain-matched) */
+  showSsoButtonPublicly: integer("show_sso_button_publicly", { mode: "boolean" }).notNull().default(false),
+  /** URL to navigate to after successful SSO login — overrides default /dashboard */
+  postLoginRedirectUrl: text("post_login_redirect_url"),
+  /** URL for IdP-initiated logout */
+  postLogoutRedirectUrl: text("post_logout_redirect_url"),
+  /** Deactivate platform user when SSO session is revoked at IdP level */
+  deactivateOnSsoRevoke: integer("deactivate_on_sso_revoke", { mode: "boolean" }).notNull().default(false),
+  /** JSON: additional policy settings */
+  policyConfig: text("policy_config").notNull().default("{}"),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_tenant_sso_config_tenant").on(table.tenantId),
+]);
+
+// ── Domain Mappings ───────────────────────────────────────────────────────
+// Maps an email domain to a tenant + identity provider for SSO auto-discovery.
+
+export const domainMappings = sqliteTable("domain_mappings", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  /** Lowercase email domain, e.g. "uni.edu" */
+  domain: text("domain").notNull(),
+  tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  identityProviderId: text("identity_provider_id").references(() => identityProviders.id, { onDelete: "set null" }),
+  /** If true, users with this domain MUST use SSO; password login blocked */
+  ssoRequired: integer("sso_required", { mode: "boolean" }).notNull().default(false),
+  isVerified: integer("is_verified", { mode: "boolean" }).notNull().default(false),
+  /** DNS TXT record token for domain ownership verification */
+  verificationToken: text("verification_token").$defaultFn(() => `cfb-verify-${crypto.randomUUID()}`),
+  verifiedAt: text("verified_at"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_domain_mappings_domain").on(table.domain),
+  index("idx_domain_mappings_tenant").on(table.tenantId),
+]);
+
+// ── User Identities ───────────────────────────────────────────────────────
+// Links a platform user account to one or more external IdP identities.
+
+export const userIdentities = sqliteTable("user_identities", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  identityProviderId: text("identity_provider_id").notNull().references(() => identityProviders.id, { onDelete: "cascade" }),
+  /** External subject identifier from IdP (OIDC: sub claim, SAML: NameID) */
+  externalSubject: text("external_subject").notNull(),
+  /** Email as reported by the IdP */
+  externalEmail: text("external_email"),
+  /** Display name from IdP */
+  externalName: text("external_name"),
+  /** JSON: raw normalized claims from IdP for role-mapping and debugging */
+  rawClaims: text("raw_claims").notNull().default("{}"),
+  lastLoginAt: text("last_login_at"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_user_identities_provider_subject").on(table.identityProviderId, table.externalSubject),
+  index("idx_user_identities_user").on(table.userId),
+]);
+
+// ── Role Mapping Rules ────────────────────────────────────────────────────
+// Maps an IdP claim value to a platform role for JIT provisioning.
+
+export const roleMappingRules = sqliteTable("role_mapping_rules", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  identityProviderId: text("identity_provider_id").notNull().references(() => identityProviders.id, { onDelete: "cascade" }),
+  /** JSON path or claim name from IdP token, e.g. "groups", "department", "role" */
+  claimKey: text("claim_key").notNull(),
+  /** Value to match against, e.g. "faculty", "engineering", "staff" */
+  claimValue: text("claim_value").notNull(),
+  /** Platform role to assign: founder | investor | mentor | member | admin */
+  mappedRole: text("mapped_role").notNull().default("founder"),
+  /** Lower number = evaluated first; first match wins */
+  priority: integer("priority").notNull().default(100),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index("idx_role_mapping_provider").on(table.identityProviderId),
+]);
+
+// ── SSO Audit Logs ────────────────────────────────────────────────────────
+// Immutable, append-only log of every SSO authentication event.
+
+export const ssoAuditLogs = sqliteTable("sso_audit_logs", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  tenantId: text("tenant_id").references(() => tenants.id, { onDelete: "set null" }),
+  identityProviderId: text("identity_provider_id").references(() => identityProviders.id, { onDelete: "set null" }),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  /**
+   * Event types:
+   * login_attempt | login_success | login_failure | jit_provision
+   * link_identity | unlink_identity | sso_revoke | domain_verify
+   * config_change | test_connection
+   */
+  eventType: text("event_type").notNull(),
+  /** success | failure | pending */
+  outcome: text("outcome").notNull(),
+  email: text("email"),
+  externalSubject: text("external_subject"),
+  errorCode: text("error_code"),
+  errorMessage: text("error_message"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  /** JSON: additional event-specific metadata */
+  metadata: text("metadata").notNull().default("{}"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index("idx_sso_audit_tenant").on(table.tenantId),
+  index("idx_sso_audit_user").on(table.userId),
+  index("idx_sso_audit_type").on(table.eventType),
+  index("idx_sso_audit_created").on(table.createdAt),
+]);
+
+// ── SSO State Tokens ──────────────────────────────────────────────────────
+// Short-lived state tokens for OIDC PKCE and SAML RelayState flows.
+// Replaces in-memory Map from oauth.ts for persistence across restarts.
+
+export const ssoStateTokens = sqliteTable("sso_state_tokens", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  state: text("state").notNull().unique(),
+  tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  identityProviderId: text("identity_provider_id").notNull().references(() => identityProviders.id, { onDelete: "cascade" }),
+  /** PKCE code verifier for OIDC PKCE flow */
+  codeVerifier: text("code_verifier"),
+  /** Frontend URL to redirect to after auth completes */
+  redirectTo: text("redirect_to").notNull().default("/dashboard"),
+  expiresAt: text("expires_at").notNull(),
+  usedAt: text("used_at"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_sso_state_state").on(table.state),
+  index("idx_sso_state_expires").on(table.expiresAt),
+]);

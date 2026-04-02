@@ -49,8 +49,10 @@ import {
   Activity,
   Plus,
   Palette,
+  ShieldCheck,
 } from "lucide-react";
 import TenantBrandingPanel from "@/components/admin/TenantBrandingPanel";
+import SSOConfigPanel from "@/components/admin/SSOConfigPanel";
 import { motion } from "framer-motion";
 
 // Chart data
@@ -154,7 +156,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function AdminDashboardPage() {
-  const [activeSection, setActiveSection] = useState<"overview" | "users" | "moderation" | "taxonomies" | "white-label">("overview");
+  const [activeSection, setActiveSection] = useState<"overview" | "users" | "moderation" | "taxonomies" | "white-label" | "sso">("overview");
   const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState("all");
 
@@ -170,6 +172,7 @@ export default function AdminDashboardPage() {
     { key: "moderation" as const, label: "Moderation", icon: Shield },
     { key: "taxonomies" as const, label: "Taxonomies", icon: Tag },
     { key: "white-label" as const, label: "White-Label", icon: Palette },
+    { key: "sso" as const, label: "Enterprise SSO", icon: ShieldCheck },
   ];
 
   const stagger = (i: number) => ({ delay: i * 0.06 });
@@ -477,6 +480,21 @@ export default function AdminDashboardPage() {
         {activeSection === "white-label" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
             <TenantBrandingPanel />
+          </motion.div>
+        )}
+
+        {/* Enterprise SSO */}
+        {activeSection === "sso" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="rounded-xl border border-border bg-card overflow-hidden"
+          >
+            <div className="border-b border-border px-5 py-4">
+              <h3 className="font-display text-base font-semibold text-foreground">Enterprise SSO</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Configure SAML / OIDC identity providers, domain mappings, role rules, and audit logs per tenant.
+              </p>
+            </div>
+            <SSOConfigPanel />
           </motion.div>
         )}
 

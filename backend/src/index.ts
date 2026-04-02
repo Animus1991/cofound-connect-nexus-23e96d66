@@ -28,6 +28,8 @@ import { adminRoutes } from "./routes/admin.js";
 import { milestonesRoutes } from "./routes/milestones.js";
 import { tenantsRoutes } from "./routes/tenants.js";
 import { publicTenantsRoutes } from "./routes/publicTenants.js";
+import { ssoRoutes } from "./routes/sso.js";
+import { publicSsoRoutes } from "./routes/publicSso.js";
 
 const PORT = parseInt(process.env.PORT ?? "3001", 10);
 
@@ -94,6 +96,8 @@ app.route("/api/admin", adminRoutes);
 app.route("/api/milestones", milestonesRoutes);
 app.route("/api/tenants", tenantsRoutes);
 app.route("/api/public/tenants", publicTenantsRoutes);
+app.route("/api/sso", ssoRoutes);
+app.route("/api/public/sso", publicSsoRoutes);
 
 // ── 404 fallback ─────────────────────────────────────────────────────────────
 app.notFound((c) => c.json({ error: "Not found" }, 404));
