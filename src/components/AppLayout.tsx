@@ -5,6 +5,7 @@ import { MobileHeader, MobileBottomNav } from "@/components/MobileNav";
 import ThemeToggle from "@/components/ThemeToggle";
 import GlobalSearch from "@/components/GlobalSearch";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import { api } from "@/lib/api";
 import {
   Rocket,
@@ -62,6 +63,7 @@ export default function AppLayout({ title, children, headerActions }: AppLayoutP
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
+  const { tenant, isBrandingActive } = useTenant();
   const isDemo = user?.email === DEMO_EMAIL;
   const initials = getUserInitials(user?.name, user?.email);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -177,13 +179,21 @@ export default function AppLayout({ title, children, headerActions }: AppLayoutP
             showLabels ? "px-4 gap-2.5" : "justify-center"
           }`}
         >
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary">
-            <Rocket className="h-3.5 w-3.5 text-primary-foreground" />
-          </div>
+          {isBrandingActive && tenant?.branding?.logoUrl ? (
+            <img
+              src={tenant.branding.logoUrl}
+              alt={tenant.branding.logoAltText ?? tenant.displayName ?? "Logo"}
+              className="h-7 w-auto max-w-[100px] shrink-0 object-contain"
+            />
+          ) : (
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary">
+              <Rocket className="h-3.5 w-3.5 text-primary-foreground" />
+            </div>
+          )}
           {showLabels && (
             <>
               <span className="flex-1 font-display text-sm font-semibold text-sidebar-foreground whitespace-nowrap overflow-hidden">
-                CoFounder Connect
+                {isBrandingActive && tenant?.displayName ? tenant.displayName : "CoFounder Connect"}
               </span>
               {/* Collapse button – only show when sidebar is pinned open */}
               {!collapsed && (

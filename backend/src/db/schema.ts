@@ -446,13 +446,140 @@ export const organizationMemberships = sqliteTable("organization_memberships", {
 export const tenants = sqliteTable("tenants", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   organizationId: text("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  /** URL-safe identifier used in /t/:slug routing */
+  slug: text("slug").notNull(),
+  displayName: text("display_name"),
+  description: text("description"),
+  aboutText: text("about_text"),
   domain: text("domain"),
-  customBranding: text("custom_branding").notNull().default("{}"), // JSON: { primaryColor, logo, name }
+  /** Deprecated JSON blob — superseded by normalized branding tables below */
+  customBranding: text("custom_branding").notNull().default("{}"),
   features: text("features").notNull().default("[]"), // JSON: enabled feature flags
+  /** When true, apply tenant branding everywhere in the app */
+  isBrandingActive: integer("is_branding_active", { mode: "boolean" }).notNull().default(false),
+  publishedAt: text("published_at"),
   maxSeats: integer("max_seats").notNull().default(50),
   currentSeats: integer("current_seats").notNull().default(0),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 }, (table) => [
   uniqueIndex("idx_tenants_org").on(table.organizationId),
+  uniqueIndex("idx_tenants_slug").on(table.slug),
+]);
+
+// ── Tenant Branding ───────────────────────────────────────────────────────────
+// Visual identity: colors, typography, logos, hero image.
+
+export const tenantBranding = sqliteTable("tenant_branding", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  /** Hex color, e.g. #0d9373 */
+  primaryColor: text("primary_color"),
+  secondaryColor: text("secondary_color"),
+  accentColor: text("accent_color"),
+  /** light | dark | auto */
+  backgroundStyle: text("background_style").notNull().default("auto"),
+  /** Uploaded asset URL */
+  logoUrl: text("logo_url"),
+  /** Square icon used as favicon / app icon */
+  faviconUrl: text("favicon_url"),
+  logoAltText: text("logo_alt_text"),
+  /** Hero / banner image for landing and login pages */
+  heroImageUrl: text("hero_image_url"),
+  headingFont: text("heading_font"),
+  bodyFont: text("body_font"),
+  /** borderRadius multiplier: sharp | default | rounded */
+  cornerStyle: text("corner_style").notNull().default("default"),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_tenant_branding_tenant").on(table.tenantId),
+]);
+
+// ── Tenant Content Settings ───────────────────────────────────────────────────
+// Copy, labels and text specific to this tenant's product experience.
+
+export const tenantContentSettings = sqliteTable("tenant_content_settings", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  heroTitle: text("hero_title"),
+  heroSubtitle: text("hero_subtitle"),
+  heroCtaLabel: text("hero_cta_label"),
+  heroCtaSecondaryLabel: text("hero_cta_secondary_label"),
+  platformDescription: text("platform_description"),
+  tagline: text("tagline"),
+  onboardingIntroText: text("onboarding_intro_text"),
+  onboardingStep1Text: text("onboarding_step1_text"),
+  onboardingStep2Text: text("onboarding_step2_text"),
+  dashboardWelcomeText: text("dashboard_welcome_text"),
+  /** Custom label for "community" concept, e.g. "Cohort", "Program" */
+  communityLabel: text("community_label"),
+  /** Custom label for "member" concept */
+  memberLabel: text("member_label"),
+  /** Custom label for "mentor" concept, e.g. "Coach", "Advisor" */
+  mentorLabel: text("mentor_label"),
+  /** Custom label for "match" concept */
+  matchLabel: text("match_label"),
+  /** JSON: custom role labels map, e.g. {"founder": "Builder", "investor": "Partner"} */
+  roleLabels: text("role_labels").notNull().default("{}"),
+  /** Custom feature: "apply now" button label */
+  applyCtaLabel: text("apply_cta_label"),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_tenant_content_tenant").on(table.tenantId),
+]);
+
+// ── Tenant Legal Settings ─────────────────────────────────────────────────────
+// Legal URLs and support contact information.
+
+export const tenantLegalSettings = sqliteTable("tenant_legal_settings", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  privacyPolicyUrl: text("privacy_policy_url"),
+  termsOfServiceUrl: text("terms_of_service_url"),
+  cookiePolicyUrl: text("cookie_policy_url"),
+  supportEmail: text("support_email"),
+  supportPhone: text("support_phone"),
+  supportUrl: text("support_url"),
+  companyName: text("company_name"),
+  companyAddress: text("company_address"),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_tenant_legal_tenant").on(table.tenantId),
+]);
+
+// ── Tenant Email Settings ─────────────────────────────────────────────────────
+// Email branding: from/reply-to fields and signature blocks.
+
+export const tenantEmailSettings = sqliteTable("tenant_email_settings", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  fromName: text("from_name"),
+  fromEmail: text("from_email"),
+  replyToEmail: text("reply_to_email"),
+  emailHeaderLogoUrl: text("email_header_logo_url"),
+  emailSignature: text("email_signature"),
+  emailFooterBranding: text("email_footer_branding"),
+  /** JSON: custom transactional email subject prefix, e.g. "[Accel Hub] " */
+  subjectPrefix: text("subject_prefix"),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_tenant_email_tenant").on(table.tenantId),
+]);
+
+// ── Tenant Social Links ───────────────────────────────────────────────────────
+// Social and web presence links shown in landing pages and footers.
+
+export const tenantSocialLinks = sqliteTable("tenant_social_links", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  websiteUrl: text("website_url"),
+  linkedinUrl: text("linkedin_url"),
+  twitterUrl: text("twitter_url"),
+  instagramUrl: text("instagram_url"),
+  facebookUrl: text("facebook_url"),
+  youtubeUrl: text("youtube_url"),
+  githubUrl: text("github_url"),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_tenant_social_tenant").on(table.tenantId),
 ]);

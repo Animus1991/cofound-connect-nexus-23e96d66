@@ -7,10 +7,12 @@ import { Rocket, Mail, Lock, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-rea
 import { motion } from "framer-motion";
 import heroBg from "@/assets/hero-bg.jpg";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import { api } from "@/lib/api";
 
 export default function LoginPage() {
   const { login, isAuthenticated } = useAuth();
+  const { tenant, isBrandingActive } = useTenant();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -64,12 +66,22 @@ export default function LoginPage() {
           className="mx-auto w-full max-w-sm relative z-10"
         >
           <Link to="/" className="mb-10 flex items-center gap-2 group">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary transition-transform duration-300 group-hover:scale-110">
-              <Rocket className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="font-display text-xl font-bold text-foreground">
-              CoFounder Connect
-            </span>
+            {isBrandingActive && tenant?.branding?.logoUrl ? (
+              <img
+                src={tenant.branding.logoUrl}
+                alt={tenant.branding.logoAltText ?? tenant.displayName ?? "Logo"}
+                className="h-8 w-auto max-w-[140px] object-contain"
+              />
+            ) : (
+              <>
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary transition-transform duration-300 group-hover:scale-110">
+                  <Rocket className="h-4 w-4 text-primary-foreground" />
+                </div>
+                <span className="font-display text-xl font-bold text-foreground">
+                  {isBrandingActive && tenant?.displayName ? tenant.displayName : "CoFounder Connect"}
+                </span>
+              </>
+            )}
           </Link>
 
           <h1 className="font-display text-3xl font-bold text-foreground">

@@ -177,6 +177,7 @@ adminRoutes.patch("/organizations/:id", async (c) => {
 
 const tenantSchema = z.object({
   organizationId: z.string().uuid(),
+  slug: z.string().regex(/^[a-z0-9-]+$/).min(2).max(60).optional(),
   domain: z.string().max(200).optional(),
   customBranding: z.record(z.unknown()).optional(),
   features: z.array(z.string()).optional(),
@@ -198,9 +199,10 @@ adminRoutes.post("/tenants", async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const parse = tenantSchema.safeParse(body);
   if (!parse.success) return c.json({ error: "Validation failed", details: parse.error.flatten() }, 400);
-  const { customBranding, features, ...rest } = parse.data;
+  const { customBranding, features, slug, ...rest } = parse.data;
   const tenant = db.insert(tenants).values({
     ...rest,
+    slug: slug ?? crypto.randomUUID(),
     customBranding: JSON.stringify(customBranding ?? {}),
     features: JSON.stringify(features ?? []),
   }).returning().get();

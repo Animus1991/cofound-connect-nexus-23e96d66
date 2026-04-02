@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { TenantProvider } from "@/contexts/TenantContext";
 import { AnimatePresence } from "framer-motion";
 import PageTransition from "@/components/PageTransition";
 import ChatWidget from "@/components/ChatWidget";
@@ -46,6 +47,7 @@ const PostDetailPage = lazy(() => import("./pages/PostDetailPage"));
 const OrganizationsPage = lazy(() => import("./pages/OrganizationsPage"));
 const OrganizationDetailPage = lazy(() => import("./pages/OrganizationDetailPage"));
 const SavedProfilesPage = lazy(() => import("./pages/SavedProfilesPage"));
+const TenantLandingPage = lazy(() => import("./pages/TenantLandingPage"));
 
 function PageLoader() {
   return (
@@ -96,6 +98,7 @@ function AnimatedRoutes() {
         <Route path="/organizations" element={<PageTransition><OrganizationsPage /></PageTransition>} />
         <Route path="/organizations/:id" element={<PageTransition><OrganizationDetailPage /></PageTransition>} />
         <Route path="/saved" element={<PageTransition><SavedProfilesPage /></PageTransition>} />
+        <Route path="/t/:slug" element={<TenantLandingPage />} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>
@@ -106,6 +109,7 @@ function AnimatedRoutes() {
 const App = () => (
   <ThemeProvider>
     <QueryClientProvider client={queryClient}>
+      <TenantProvider>
       <AuthProvider>
         <TooltipProvider>
           <Toaster />
@@ -116,6 +120,7 @@ const App = () => (
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>
+      </TenantProvider>
     </QueryClientProvider>
   </ThemeProvider>
 );

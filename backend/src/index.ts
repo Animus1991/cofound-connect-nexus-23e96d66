@@ -26,6 +26,8 @@ import { communitiesRoutes } from "./routes/communities.js";
 import { mentorshipRoutes } from "./routes/mentorship.js";
 import { adminRoutes } from "./routes/admin.js";
 import { milestonesRoutes } from "./routes/milestones.js";
+import { tenantsRoutes } from "./routes/tenants.js";
+import { publicTenantsRoutes } from "./routes/publicTenants.js";
 
 const PORT = parseInt(process.env.PORT ?? "3001", 10);
 
@@ -90,6 +92,8 @@ app.route("/api/communities", communitiesRoutes);
 app.route("/api/mentorship", mentorshipRoutes);
 app.route("/api/admin", adminRoutes);
 app.route("/api/milestones", milestonesRoutes);
+app.route("/api/tenants", tenantsRoutes);
+app.route("/api/public/tenants", publicTenantsRoutes);
 
 // ── 404 fallback ─────────────────────────────────────────────────────────────
 app.notFound((c) => c.json({ error: "Not found" }, 404));

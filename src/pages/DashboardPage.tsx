@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import { api } from "@/lib/api";
 import { StatSkeleton, CardSkeleton, ListItemSkeleton } from "@/components/SkeletonLoaders";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -144,6 +145,10 @@ export default function DashboardPage() {
   }, [isAuthenticated, authLoading, loadStats]);
 
   const displayName = user?.name?.split(" ")[0] ?? "there";
+  const { tenant, isBrandingActive } = useTenant();
+  const welcomeText = isBrandingActive && tenant?.content?.dashboardWelcomeText
+    ? tenant.content.dashboardWelcomeText.replace("{name}", displayName)
+    : `Welcome back, ${displayName}`;
 
   const toggleSave = (name: string) => {
     setSavedMatches((prev) => prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]);
@@ -170,7 +175,7 @@ export default function DashboardPage() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                   <h2 className="font-display text-xl sm:text-2xl font-semibold text-foreground">
-                    Welcome back, {displayName}
+                    {welcomeText}
                   </h2>
                   <p className="mt-1 text-sm text-muted-foreground">
                     You have{" "}

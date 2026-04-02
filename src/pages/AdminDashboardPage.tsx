@@ -48,7 +48,9 @@ import {
   Flag,
   Activity,
   Plus,
+  Palette,
 } from "lucide-react";
+import TenantBrandingPanel from "@/components/admin/TenantBrandingPanel";
 import { motion } from "framer-motion";
 
 // Chart data
@@ -152,7 +154,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function AdminDashboardPage() {
-  const [activeSection, setActiveSection] = useState<"overview" | "users" | "moderation" | "taxonomies">("overview");
+  const [activeSection, setActiveSection] = useState<"overview" | "users" | "moderation" | "taxonomies" | "white-label">("overview");
   const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState("all");
 
@@ -167,6 +169,7 @@ export default function AdminDashboardPage() {
     { key: "users" as const, label: "Users", icon: Users },
     { key: "moderation" as const, label: "Moderation", icon: Shield },
     { key: "taxonomies" as const, label: "Taxonomies", icon: Tag },
+    { key: "white-label" as const, label: "White-Label", icon: Palette },
   ];
 
   const stagger = (i: number) => ({ delay: i * 0.06 });
@@ -467,6 +470,13 @@ export default function AdminDashboardPage() {
                 </div>
               </motion.div>
             ))}
+          </motion.div>
+        )}
+
+        {/* White-Label */}
+        {activeSection === "white-label" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+            <TenantBrandingPanel />
           </motion.div>
         )}
 
