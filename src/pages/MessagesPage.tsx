@@ -129,7 +129,7 @@ export default function MessagesPage() {
       <div className="flex h-[calc(100vh-7.5rem)] lg:h-[calc(100vh-4rem)]">
         {/* Left panel */}
         <div
-          className={`w-full lg:max-w-sm border-r border-border/50 flex flex-col bg-card/30 ${
+          className={`w-full lg:w-[320px] xl:w-[360px] shrink-0 border-r border-border/50 flex flex-col bg-card/30 ${
             showChat ? "hidden lg:flex" : "flex"
           }`}
         >
@@ -344,7 +344,7 @@ export default function MessagesPage() {
 
               {/* Messages */}
               <ScrollArea className="flex-1 p-4 lg:p-6">
-                <div className="space-y-4 max-w-3xl mx-auto">
+                <div className="space-y-4">
                   {/* AI empty state with suggested prompts */}
                   {currentMessages.length === 0 && currentConvo.type === "ai" && (
                     <div className="text-center py-8">
@@ -522,7 +522,7 @@ export default function MessagesPage() {
 
               {/* Input bar */}
               <div className="border-t border-border/50 p-4 bg-card/30">
-                <div className="flex items-center gap-2 max-w-3xl mx-auto">
+                <div className="flex items-center gap-2">
                   {currentConvo.type === "human" && (
                     <Button
                       variant="ghost"

@@ -52,47 +52,47 @@
   }
 
   .light {
-    --background: 210 20% 97%;
-    --foreground: 222 40% 10%;
+    --background: 210 20% 96%;
+    --foreground: 222 40% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 40% 10%;
+    --card-foreground: 222 40% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 40% 10%;
+    --popover-foreground: 222 40% 8%;
 
-    --primary: 174 72% 28%;
+    --primary: 174 72% 26%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 16% 92%;
-    --secondary-foreground: 222 25% 22%;
+    --secondary: 210 16% 90%;
+    --secondary-foreground: 222 30% 18%;
 
-    /* muted-foreground raised to 38% lightness → ~5:1 contrast on white, WCAG AA */
-    --muted: 210 16% 93%;
-    --muted-foreground: 215 16% 38%;
+    /* muted-foreground at 28% lightness → ~7:1 contrast on white, WCAG AAA */
+    --muted: 210 16% 91%;
+    --muted-foreground: 215 18% 28%;
 
-    --accent: 38 85% 44%;
+    --accent: 38 85% 40%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 50%;
+    --destructive: 0 72% 46%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 16% 84%;
-    --input: 214 16% 84%;
-    --ring: 174 72% 28%;
+    --border: 214 18% 78%;
+    --input: 214 18% 78%;
+    --ring: 174 72% 26%;
 
-    --sidebar-background: 0 0% 99%;
-    --sidebar-foreground: 222 35% 12%;
-    --sidebar-primary: 174 72% 28%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 222 35% 10%;
+    --sidebar-primary: 174 72% 26%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 16% 93%;
-    --sidebar-accent-foreground: 222 25% 18%;
-    --sidebar-border: 214 16% 86%;
-    --sidebar-ring: 174 72% 28%;
+    --sidebar-accent: 210 16% 91%;
+    --sidebar-accent-foreground: 222 30% 12%;
+    --sidebar-border: 214 18% 82%;
+    --sidebar-ring: 174 72% 26%;
 
-    --shadow-subtle: 0 1px 3px hsl(222 20% 40% / 0.08);
-    --shadow-card: 0 2px 8px hsl(222 20% 40% / 0.08);
-    --shadow-elevated: 0 4px 16px hsl(222 20% 40% / 0.10);
+    --shadow-subtle: 0 1px 3px hsl(222 20% 40% / 0.10);
+    --shadow-card: 0 2px 8px hsl(222 20% 40% / 0.10);
+    --shadow-elevated: 0 4px 16px hsl(222 20% 40% / 0.12);
   }
 }
 

@@ -45,6 +45,7 @@ const MentorDetailPage = lazy(() => import("./pages/MentorDetailPage"));
 const PostDetailPage = lazy(() => import("./pages/PostDetailPage"));
 const OrganizationsPage = lazy(() => import("./pages/OrganizationsPage"));
 const OrganizationDetailPage = lazy(() => import("./pages/OrganizationDetailPage"));
+const SavedProfilesPage = lazy(() => import("./pages/SavedProfilesPage"));
 
 function PageLoader() {
   return (
@@ -94,6 +95,7 @@ function AnimatedRoutes() {
         <Route path="/communities/:id/posts/:postId" element={<PageTransition><PostDetailPage /></PageTransition>} />
         <Route path="/organizations" element={<PageTransition><OrganizationsPage /></PageTransition>} />
         <Route path="/organizations/:id" element={<PageTransition><OrganizationDetailPage /></PageTransition>} />
+        <Route path="/saved" element={<PageTransition><SavedProfilesPage /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>

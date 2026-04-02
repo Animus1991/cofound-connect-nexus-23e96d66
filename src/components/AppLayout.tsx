@@ -26,6 +26,7 @@ import {
   Network,
   PanelLeftClose,
   PanelLeftOpen,
+  Bookmark,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -33,6 +34,7 @@ const NAV_ITEMS = [
   { icon: Sparkles, label: "Matches", path: "/matches" },
   { icon: Search, label: "Discover", path: "/discover" },
   { icon: Network, label: "Network", path: "/network" },
+  { icon: Bookmark, label: "Saved", path: "/saved" },
   { icon: MessageSquare, label: "Messages", path: "/messages" },
   { icon: GraduationCap, label: "Mentors", path: "/mentors" },
   { icon: Users, label: "Communities", path: "/communities" },

@@ -73,6 +73,8 @@ const mockMentors = [
 const expertiseOptions = ["AI/ML", "SaaS", "Growth", "Fundraising", "Engineering", "UI/UX", "Finance", "Product Strategy"];
 const stageOptions = ["Idea", "MVP", "Traction", "Seed", "Series A", "Scale"];
 
+type Mentor = typeof mockMentors[0];
+
 export default function MentorsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [expertiseFilter, setExpertiseFilter] = useState("all");
@@ -80,6 +82,7 @@ export default function MentorsPage() {
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
   const [requestedMentors, setRequestedMentors] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1000);
@@ -98,47 +101,92 @@ export default function MentorsPage() {
     <AppLayout
       title="Mentors"
       headerActions={
-        <div className="hidden sm:flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search mentors..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 w-56 h-9 bg-secondary/30 border-border/40" />
-          </div>
+        <div className="relative hidden sm:block">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Search mentors..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 w-56 h-9" />
         </div>
       }
     >
-      <div className="px-2 py-3 space-y-5">
-        {/* Mobile search */}
-        <div className="sm:hidden">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search mentors..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 bg-secondary/30" />
+      <div className="flex h-[calc(100vh-3rem)] overflow-hidden">
+
+        {/* ── Left: sticky filter sidebar ── */}
+        <div className="hidden lg:flex flex-col w-[200px] shrink-0 border-r border-border/50 bg-background">
+          <div className="p-4 space-y-4">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Filters</p>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">Expertise</label>
+              <Select value={expertiseFilter} onValueChange={setExpertiseFilter}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All Expertise" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" className="text-xs">All Expertise</SelectItem>
+                  {expertiseOptions.map(e => <SelectItem key={e} value={e} className="text-xs">{e}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">Stage</label>
+              <Select value={stageFilter} onValueChange={setStageFilter}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" className="text-xs">All Stages</SelectItem>
+                  {stageOptions.map(s => <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">Availability</label>
+              <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Any" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" className="text-xs">Any</SelectItem>
+                  <SelectItem value="open" className="text-xs">Open</SelectItem>
+                  <SelectItem value="limited" className="text-xs">Limited</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {(expertiseFilter !== "all" || stageFilter !== "all" || availabilityFilter !== "all") && (
+              <button onClick={() => { setExpertiseFilter("all"); setStageFilter("all"); setAvailabilityFilter("all"); }}
+                className="text-xs text-primary hover:underline">
+                Clear filters
+              </button>
+            )}
+
+            <div className="pt-2 border-t border-border/50">
+              <p className="text-xs text-muted-foreground">{filtered.length} mentor{filtered.length !== 1 ? "s" : ""} found</p>
+            </div>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-2">
-          <Select value={expertiseFilter} onValueChange={setExpertiseFilter}>
-            <SelectTrigger className="w-40 h-9 bg-secondary/30 border-border/40"><Filter className="h-3 w-3 mr-1" /><SelectValue placeholder="Expertise" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Expertise</SelectItem>
-              {expertiseOptions.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={stageFilter} onValueChange={setStageFilter}>
-            <SelectTrigger className="w-40 h-9 bg-secondary/30 border-border/40"><SelectValue placeholder="Stage" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Stages</SelectItem>
-              {stageOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
-            <SelectTrigger className="w-40 h-9 bg-secondary/30 border-border/40"><SelectValue placeholder="Availability" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Any Availability</SelectItem>
-              <SelectItem value="open">Open</SelectItem>
-              <SelectItem value="limited">Limited</SelectItem>
-            </SelectContent>
-          </Select>
+        {/* ── Center: cards grid ── */}
+        <div className={`flex-1 overflow-y-auto ${selectedMentor ? "lg:max-w-[calc(100%-360px)]" : ""}`}>
+        <div className="px-2 py-3 space-y-4">
+
+        {/* Mobile search + filters */}
+        <div className="lg:hidden space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Search mentors..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Select value={expertiseFilter} onValueChange={setExpertiseFilter}>
+              <SelectTrigger className="w-36 h-8 text-xs"><Filter className="h-3 w-3 mr-1" /><SelectValue placeholder="Expertise" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Expertise</SelectItem>
+                {expertiseOptions.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={stageFilter} onValueChange={setStageFilter}>
+              <SelectTrigger className="w-32 h-8 text-xs"><SelectValue placeholder="Stage" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Stages</SelectItem>
+                {stageOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Results */}
@@ -155,7 +203,10 @@ export default function MentorsPage() {
                   initial={{ opacity: 0, y: 12, filter: "blur(4px)" }}
                   animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                   transition={{ delay: i * 0.06, duration: 0.5, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
-                  className="rounded-2xl border border-border/40 bg-card p-5 transition-all duration-300 hover:border-primary/20 hover:shadow-[0_2px_16px_hsl(var(--primary)/0.06)] active:scale-[0.99]"
+                  className={`rounded-2xl border p-5 transition-all duration-300 cursor-pointer hover:border-primary/20 hover:shadow-[0_2px_16px_hsl(var(--primary)/0.06)] active:scale-[0.99] ${
+                    selectedMentor?.id === mentor.id ? "border-primary/40 bg-primary/5" : "border-border/40 bg-card"
+                  }`}
+                  onClick={() => setSelectedMentor(selectedMentor?.id === mentor.id ? null : mentor)}
                 >
                   <div className="flex items-start gap-3 mb-4">
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/12">
@@ -232,7 +283,92 @@ export default function MentorsPage() {
             </Button>
           </div>
         )}
-      </div>
+        </div>{/* /px-2 py-3 */}
+        </div>{/* /center scroll */}
+
+        {/* ── Right: detail quick-view panel ── */}
+        {selectedMentor ? (
+          <div className="hidden lg:flex flex-col w-[340px] shrink-0 border-l border-border/50 bg-background overflow-y-auto">
+            <div className="p-5 space-y-4">
+              {/* Header */}
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/12">
+                    <GraduationCap className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-display text-sm font-semibold text-foreground">{selectedMentor.name}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">{selectedMentor.headline}</p>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedMentor(null)} className="text-muted-foreground hover:text-foreground">
+                  <span className="text-xs">✕</span>
+                </button>
+              </div>
+
+              <Badge variant={selectedMentor.availability === "Open" ? "default" : "secondary"} className="text-xs">
+                {selectedMentor.availability}
+              </Badge>
+
+              <p className="text-xs text-foreground/80 leading-relaxed">{selectedMentor.bio}</p>
+
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Expertise</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedMentor.expertise.map(e => (
+                    <span key={e} className="rounded-full bg-primary/8 px-2 py-0.5 text-[10px] font-medium text-primary">{e}</span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Startup Stages</p>
+                <div className="flex flex-wrap gap-1">
+                  {selectedMentor.stages.map(s => (
+                    <span key={s} className="rounded-md bg-secondary/50 px-1.5 py-0.5 text-[10px] text-secondary-foreground">{s}</span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 rounded-lg bg-secondary/30 p-3 text-[11px] text-muted-foreground">
+                <span className="flex items-center gap-1"><Star className="h-3 w-3 text-accent fill-accent" />{selectedMentor.rating} rating</span>
+                <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{selectedMentor.sessions} sessions</span>
+                <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{selectedMentor.location.split(",")[0]}</span>
+                <span className="flex items-center gap-1"><Users className="h-3 w-3" />{selectedMentor.currentMentees}/{selectedMentor.maxMentees} mentees</span>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  size="sm" className="flex-1 text-xs h-8"
+                  variant={requestedMentors.includes(selectedMentor.id) ? "secondary" : "default"}
+                  disabled={requestedMentors.includes(selectedMentor.id) || selectedMentor.currentMentees >= selectedMentor.maxMentees}
+                  onClick={() => setRequestedMentors(prev => [...prev, selectedMentor.id])}
+                >
+                  {requestedMentors.includes(selectedMentor.id)
+                    ? <><CheckCircle2 className="h-3 w-3 mr-1" />Requested</>
+                    : selectedMentor.currentMentees >= selectedMentor.maxMentees ? "Full" : "Request Mentorship"}
+                </Button>
+                <Button variant="outline" size="sm" className="text-xs h-8">
+                  <MessageSquare className="h-3 w-3" />
+                </Button>
+              </div>
+              <Link to={`/profile/${selectedMentor.id}`} className="block text-center text-xs text-primary hover:underline">
+                View full profile →
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="hidden lg:flex w-[340px] shrink-0 border-l border-border/50 bg-background/50 items-center justify-center">
+            <div className="text-center px-6">
+              <div className="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center mx-auto mb-3">
+                <GraduationCap className="w-6 h-6 text-muted-foreground/30" />
+              </div>
+              <p className="text-xs text-muted-foreground">Click a mentor card to preview details</p>
+            </div>
+          </div>
+        )}
+
+      </div>{/* /flex h-full */}
     </AppLayout>
   );
 }

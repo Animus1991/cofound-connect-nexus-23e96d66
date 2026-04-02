@@ -21,6 +21,10 @@ import {
   Trash2,
   Save,
   ExternalLink,
+  CheckCircle2,
+  Lightbulb,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 type StartupProfile = {
@@ -223,7 +227,9 @@ export default function StartupPage() {
           )}
         </div>
 
-        <div className="space-y-6">
+        <div className="grid gap-6 lg:grid-cols-[1fr_300px] items-start">
+        {/* ── Left: Form sections ── */}
+        <div className="space-y-5">
           {/* Basic Info */}
           <section className="rounded-xl border border-border bg-card p-5">
             <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -402,7 +408,84 @@ export default function StartupPage() {
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {startup ? "Save Changes" : "Create Startup Profile"}
           </Button>
-        </div>
+        </div>{/* /left column */}
+
+        {/* ── Right: Live preview + completion ── */}
+        <div className="space-y-4 lg:sticky lg:top-12">
+
+          {/* Profile preview card */}
+          <div className="rounded-xl border border-border bg-card p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Eye className="h-3.5 w-3.5 text-primary" />
+              <h3 className="text-sm font-semibold text-foreground">Public Preview</h3>
+              <span className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground">
+                {isPublic ? <><Eye className="h-3 w-3" /> Visible</> : <><EyeOff className="h-3 w-3" /> Hidden</>}
+              </span>
+            </div>
+            <div className="rounded-lg bg-secondary/40 p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/15">
+                  <Rocket className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">
+                    {name || "Your Startup Name"}
+                  </p>
+                  {tagline && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{tagline}</p>}
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {industry && <Badge variant="secondary" className="text-[10px]">{industry}</Badge>}
+                    {stage && <Badge variant="secondary" className="text-[10px] capitalize">{stage}</Badge>}
+                  </div>
+                  {techStack.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {techStack.slice(0, 4).map((t) => (
+                        <span key={t} className="text-[10px] rounded bg-primary/10 text-primary px-1.5 py-0.5">{t}</span>
+                      ))}
+                      {techStack.length > 4 && <span className="text-[10px] text-muted-foreground">+{techStack.length - 4}</span>}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Completion checklist */}
+          <div className="rounded-xl border border-border bg-card p-5">
+            <h3 className="text-sm font-semibold text-foreground mb-3">Profile Strength</h3>
+            <div className="space-y-2">
+              {[
+                { label: "Startup name", done: !!name.trim() },
+                { label: "Tagline added", done: !!tagline.trim() },
+                { label: "Description written", done: description.length > 20 },
+                { label: "Industry selected", done: !!industry.trim() },
+                { label: "Stage selected", done: !!stage },
+                { label: "Tech stack added", done: techStack.length > 0 },
+                { label: "Tags added", done: tags.length > 0 },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center gap-2 text-xs">
+                  <CheckCircle2 className={`h-3.5 w-3.5 shrink-0 ${item.done ? "text-primary" : "text-border"}`} />
+                  <span className={item.done ? "text-foreground" : "text-muted-foreground"}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Tips */}
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Lightbulb className="h-3.5 w-3.5 text-primary" />
+              <h3 className="text-sm font-semibold text-primary">Tips</h3>
+            </div>
+            <ul className="space-y-1.5 text-xs text-foreground/80">
+              <li>• A clear tagline increases match visibility by 3×</li>
+              <li>• Add your tech stack to attract the right co-founders</li>
+              <li>• Startups with descriptions get 5× more intro requests</li>
+              <li>• Enable public profile so mentors can find you</li>
+            </ul>
+          </div>
+        </div>{/* /right column */}
+
+        </div>{/* /grid */}
       </div>
     </AppLayout>
   );

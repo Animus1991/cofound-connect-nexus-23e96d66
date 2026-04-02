@@ -156,19 +156,57 @@ export default function SettingsPage() {
     }
   };
 
+  const SETTINGS_NAV = [
+    { id: "account",       icon: User,     label: "Account",       desc: "Profile & preferences" },
+    { id: "notifications", icon: Bell,     label: "Notifications", desc: "Alerts & emails" },
+    { id: "privacy",       icon: Shield,   label: "Privacy",       desc: "Visibility settings" },
+    { id: "connections",   icon: Link2,    label: "Integrations",  desc: "Connected accounts" },
+  ] as const;
+
   return (
     <AppLayout title="Settings">
       <div className="px-2 py-4">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6 flex-wrap h-auto">
-            <TabsTrigger value="account" className="gap-1.5"><User className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Account</span><span className="sm:hidden">Acct</span></TabsTrigger>
-            <TabsTrigger value="notifications" className="gap-1.5"><Bell className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Notifications</span><span className="sm:hidden">Notifs</span></TabsTrigger>
-            <TabsTrigger value="privacy" className="gap-1.5"><Shield className="h-3.5 w-3.5" /> Privacy</TabsTrigger>
-            <TabsTrigger value="connections" className="gap-1.5"><Link2 className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Connections</span><span className="sm:hidden">Links</span></TabsTrigger>
-          </TabsList>
+        {/* Mobile: horizontal tabs */}
+        <div className="flex gap-1 mb-4 lg:hidden flex-wrap">
+          {SETTINGS_NAV.map((nav) => (
+            <button key={nav.id} onClick={() => setActiveTab(nav.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                activeTab === nav.id ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
+              }`}>
+              <nav.icon className="h-3.5 w-3.5" />{nav.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Desktop: 2-column layout */}
+        <div className="grid gap-6 lg:grid-cols-[220px_1fr] items-start">
+          {/* Left nav */}
+          <div className="hidden lg:block lg:sticky lg:top-12 rounded-xl border border-border bg-card overflow-hidden">
+            {SETTINGS_NAV.map((nav) => (
+              <button key={nav.id} onClick={() => setActiveTab(nav.id)}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors border-b border-border/50 last:border-0 ${
+                  activeTab === nav.id
+                    ? "bg-primary/10 text-primary"
+                    : "text-foreground hover:bg-secondary/60"
+                }`}>
+                <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${
+                  activeTab === nav.id ? "bg-primary/15" : "bg-secondary"
+                }`}>
+                  <nav.icon className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{nav.label}</p>
+                  <p className="text-[10px] text-muted-foreground">{nav.desc}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Right: content */}
+          <div>
 
           {/* Account */}
-          <TabsContent value="account">
+          {activeTab === "account" && (<>
             <Card className="border-border/50">
               <CardHeader>
                 <CardTitle className="text-lg">Account Information</CardTitle>
@@ -234,12 +272,12 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
             <div className="mt-4 flex justify-end">
-              <Button variant="hero" onClick={handleSave}>Save Changes</Button>
+              <Button variant="hero" onClick={handleSave} disabled={isSaving}>Save Changes</Button>
             </div>
-          </TabsContent>
+          </>)}
 
           {/* Notifications */}
-          <TabsContent value="notifications">
+          {activeTab === "notifications" && (<>
             <Card className="border-border/50">
               <CardHeader>
                 <CardTitle className="text-lg">Notification Preferences</CardTitle>
@@ -271,12 +309,12 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
             <div className="mt-4 flex justify-end">
-              <Button variant="hero" onClick={handleSave}>Save Changes</Button>
+              <Button variant="hero" onClick={handleSave} disabled={isSaving}>Save Changes</Button>
             </div>
-          </TabsContent>
+          </>)}
 
           {/* Privacy */}
-          <TabsContent value="privacy">
+          {activeTab === "privacy" && (<>
             <Card className="border-border/50">
               <CardHeader>
                 <CardTitle className="text-lg">Privacy & Visibility</CardTitle>
@@ -318,12 +356,12 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
             <div className="mt-4 flex justify-end">
-              <Button variant="hero" onClick={handleSave}>Save Changes</Button>
+              <Button variant="hero" onClick={handleSave} disabled={isSaving}>Save Changes</Button>
             </div>
-          </TabsContent>
+          </>)}
 
           {/* Connected Accounts */}
-          <TabsContent value="connections">
+          {activeTab === "connections" && (
             <Card className="border-border/50">
               <CardHeader>
                 <CardTitle className="text-lg">Connected Accounts</CardTitle>
@@ -356,8 +394,10 @@ export default function SettingsPage() {
                 ))}
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+          )}
+
+          </div>{/* /right column */}
+        </div>{/* /grid */}
       </div>
     </AppLayout>
   );

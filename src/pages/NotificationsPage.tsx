@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import {
   Bell,
   UserPlus,
@@ -23,6 +24,10 @@ import {
   Target,
   BookOpen,
   Calendar,
+  TrendingUp,
+  Activity,
+  Zap,
+  Info,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -268,6 +273,9 @@ export default function NotificationsPage() {
   return (
     <AppLayout title="Notifications" headerActions={headerActions}>
       <div className="px-2 py-4">
+        <div className="grid gap-6 lg:grid-cols-[1fr_280px] items-start">
+        {/* ── Left: notification feed ── */}
+        <div>
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="mb-5 h-9 w-full sm:w-auto">
             <TabsTrigger value="notifications" className="gap-2 text-xs">
@@ -352,6 +360,67 @@ export default function NotificationsPage() {
             )}
           </TabsContent>
         </Tabs>
+        </div>{/* /left column */}
+
+        {/* ── Right: stats + quick preferences ── */}
+        <div className="space-y-4 lg:sticky lg:top-12">
+
+          {/* Stats */}
+          <div className="rounded-xl border border-border bg-card p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="h-3.5 w-3.5 text-primary" />
+              <h3 className="text-sm font-semibold text-foreground">Activity Summary</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { label: "Total", value: notifications.length, icon: Bell },
+                { label: "Unread", value: unreadCount, icon: Activity },
+                { label: "Activities", value: activity.length, icon: Zap },
+                { label: "This week", value: notifications.filter(n => {
+                  const d = Date.now() - new Date(n.createdAt).getTime();
+                  return d < 7 * 86_400_000;
+                }).length, icon: TrendingUp },
+              ].map((s) => (
+                <div key={s.label} className="rounded-lg bg-secondary/40 p-3 text-center">
+                  <p className="text-xl font-bold text-foreground tabular-nums">{s.value}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{s.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick notification preferences */}
+          <div className="rounded-xl border border-border bg-card p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Info className="h-3.5 w-3.5 text-primary" />
+              <h3 className="text-sm font-semibold text-foreground">Preferences</h3>
+            </div>
+            <div className="space-y-3">
+              {[
+                { label: "Connection requests", defaultOn: true },
+                { label: "New messages", defaultOn: true },
+                { label: "Match suggestions", defaultOn: true },
+                { label: "Community updates", defaultOn: false },
+                { label: "Product updates", defaultOn: false },
+              ].map((pref) => (
+                <div key={pref.label} className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-foreground">{pref.label}</span>
+                  <Switch defaultChecked={pref.defaultOn} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Tip */}
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+            <p className="text-xs text-foreground/80 leading-relaxed">
+              <span className="font-semibold text-primary">Tip:</span> Keep notifications on for
+              connection requests to respond faster — quick responses increase your match rate.
+            </p>
+          </div>
+        </div>{/* /right column */}
+
+        </div>{/* /grid */}
       </div>
     </AppLayout>
   );

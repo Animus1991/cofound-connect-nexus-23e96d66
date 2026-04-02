@@ -337,44 +337,109 @@ export default function DiscoverPage() {
 
   return (
     <AppLayout title="Discover">
-      <div className="px-2 py-3 space-y-4">
-        {/* Search & Filters */}
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex h-[calc(100vh-3rem)] overflow-hidden">
+
+        {/* ── Left: sticky filter sidebar ── */}
+        <div className="hidden lg:flex flex-col w-[220px] shrink-0 border-r border-border/50 bg-background overflow-y-auto">
+          <div className="p-4 space-y-5 sticky top-0">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Filters</p>
+              {activeFilters.length > 0 && (
+                <button className="text-xs text-primary hover:underline mb-2 block"
+                  onClick={() => { setRoleFilter("All Roles"); setStageFilter("All Stages"); }}>
+                  Clear all filters
+                </button>
+              )}
+            </div>
+
+            {/* Role */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">Role</label>
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>{roles.map((r) => <SelectItem key={r} value={r} className="text-xs">{r}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+
+            {/* Stage */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">Stage</label>
+              <Select value={stageFilter} onValueChange={setStageFilter}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>{stages.map((s) => <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+
+            {/* View mode */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">View</label>
+              <div className="flex border border-border rounded-lg overflow-hidden">
+                <button onClick={() => setViewMode("grid")}
+                  className={`flex-1 flex items-center justify-center py-1.5 text-xs transition-colors ${viewMode === "grid" ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-secondary/50"}`}>
+                  <Grid3X3 className="h-3.5 w-3.5 mr-1" /> Grid
+                </button>
+                <button onClick={() => setViewMode("list")}
+                  className={`flex-1 flex items-center justify-center py-1.5 text-xs transition-colors ${viewMode === "list" ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-secondary/50"}`}>
+                  <List className="h-3.5 w-3.5 mr-1" /> List
+                </button>
+              </div>
+            </div>
+
+            {/* Active filter chips */}
+            {activeFilters.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {activeFilters.map((f) => (
+                  <Badge key={f} variant="secondary" className="gap-1 text-[10px]">
+                    {f}
+                    <button onClick={() => { if (roles.includes(f!)) setRoleFilter("All Roles"); else setStageFilter("All Stages"); }}>
+                      <X className="h-2.5 w-2.5" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Right: search + results ── */}
+        <div className="flex-1 overflow-y-auto">
+        <div className="px-2 py-3 space-y-4">
+
+        {/* Search + mobile filters */}
+        <div className="flex flex-col gap-3">
+          <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input placeholder="Search founders, co-founders, mentors..." className="pl-10 pr-9" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
               {isSearching && <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground animate-spin" />}
             </div>
-            <div className="flex gap-2">
+            {/* Mobile filters only */}
+            <div className="flex lg:hidden gap-2">
               <Select value={roleFilter} onValueChange={setRoleFilter}>
-                <SelectTrigger className="w-[140px]"><Filter className="h-3.5 w-3.5 mr-1.5" /><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-[120px] h-9"><Filter className="h-3.5 w-3.5 mr-1" /><SelectValue /></SelectTrigger>
                 <SelectContent>{roles.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
               </Select>
               <Select value={stageFilter} onValueChange={setStageFilter}>
-                <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-[110px] h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>{stages.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
               </Select>
-              <div className="hidden sm:flex border border-border rounded-lg">
-                <Button variant={viewMode === "grid" ? "secondary" : "ghost"} size="icon" className="h-9 w-9 rounded-r-none" onClick={() => setViewMode("grid")}><Grid3X3 className="h-4 w-4" /></Button>
-                <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="icon" className="h-9 w-9 rounded-l-none" onClick={() => setViewMode("list")}><List className="h-4 w-4" /></Button>
-              </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">{filtered.length} {searchResults !== null ? "search result" : "match"}{filtered.length !== 1 ? "s" : ""}</span>
-              {activeFilters.map((f) => (
-                <Badge key={f} variant="secondary" className="gap-1 text-xs">
-                  {f}
-                  <button onClick={() => { if (roles.includes(f!)) setRoleFilter("All Roles"); else setStageFilter("All Stages"); }}><X className="h-3 w-3" /></button>
-                </Badge>
-              ))}
-              {activeFilters.length > 0 && (
-                <button className="text-xs text-primary hover:underline" onClick={() => { setRoleFilter("All Roles"); setStageFilter("All Stages"); }}>Clear all</button>
-              )}
-            </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              {filtered.length} {searchResults !== null ? "search result" : "match"}{filtered.length !== 1 ? "s" : ""}
+            </span>
+            {activeFilters.map((f) => (
+              <Badge key={f} variant="secondary" className="gap-1 text-xs">
+                {f}
+                <button onClick={() => { if (roles.includes(f!)) setRoleFilter("All Roles"); else setStageFilter("All Stages"); }}><X className="h-3 w-3" /></button>
+              </Badge>
+            ))}
           </div>
         </div>
 
@@ -572,7 +637,9 @@ export default function DiscoverPage() {
             )}
           </>
         )}
-      </div>
+        </div>{/* /px-2 py-3 space-y-4 */}
+        </div>{/* /right scroll column */}
+      </div>{/* /flex h-full */}
     </AppLayout>
   );
 }

@@ -228,7 +228,7 @@ export default function NetworkPage() {
 
           {/* Connections Tab */}
           <TabsContent value="connections" className="mt-4 space-y-4">
-            <div className="relative max-w-md">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search connections…"
@@ -237,7 +237,7 @@ export default function NetworkPage() {
                 className="pl-9 bg-secondary/50"
               />
             </div>
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               <AnimatePresence>
                 {filteredConnections.map((conn) => (
                   <motion.div
@@ -288,7 +288,8 @@ export default function NetworkPage() {
           </TabsContent>
 
           {/* Pending Tab */}
-          <TabsContent value="pending" className="mt-4 space-y-6">
+          <TabsContent value="pending" className="mt-4">
+            <div className="grid gap-6 lg:grid-cols-2 items-start">
             {incomingRequests.length > 0 && (
               <div className="space-y-3">
                 <h3 className="text-sm font-medium text-foreground">Incoming Requests</h3>
@@ -333,7 +334,7 @@ export default function NetworkPage() {
 
             {outgoingRequests.length > 0 && (
               <div className="space-y-3">
-                <h3 className="text-sm font-medium text-foreground">Sent Requests</h3>
+                <h3 className="text-sm font-medium text-foreground">Sent Requests ({outgoingRequests.length})</h3>
                 {outgoingRequests.map((req) => (
                   <div key={req.id} className="rounded-xl border border-border/50 bg-card-gradient p-4 flex items-center gap-3">
                     <Avatar className="h-10 w-10">
@@ -359,11 +360,12 @@ export default function NetworkPage() {
                 No pending requests
               </div>
             )}
+            </div>{/* /pending grid */}
           </TabsContent>
 
           {/* Suggested Tab */}
           <TabsContent value="suggested" className="mt-4">
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {suggested.map((s) => (
                 <motion.div
                   key={s.id}
