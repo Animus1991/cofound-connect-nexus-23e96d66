@@ -180,7 +180,11 @@ function MatchCard({
           )}
 
           {/* Explanation */}
-          <p className="text-xs text-slate-400 mt-2.5 italic line-clamp-2">{match.explanation}</p>
+          {match.sharedStrengths.length > 0 && (
+            <p className="text-xs text-muted-foreground mt-2.5 italic line-clamp-2">
+              Shared strengths: {match.sharedStrengths.join(", ")}
+            </p>
+          )}
         </div>
       </div>
 
