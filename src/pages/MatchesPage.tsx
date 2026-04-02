@@ -596,11 +596,11 @@ function MatchPreferencesModal({ open, onClose }: { open: boolean; onClose: () =
         setRoles(JSON.parse(p.lookingForRoles as unknown as string) as string[] || []);
         setSkills(JSON.parse(p.desiredSkills as unknown as string) as string[] || []);
         setIndustries(JSON.parse(p.preferredIndustries as unknown as string) as string[] || []);
-        setStage(p.preferredStage ?? "");
-        setCommitment(p.preferredCommitment ?? "");
-        setLocation(p.workLocationPreference ?? "remote");
-        setGeo(p.geographicOpenness ?? "global");
-        setWorkStyle(p.workStyle ?? "");
+        setStage(Array.isArray(p.preferredStages) ? (p.preferredStages[0] ?? "") : "");
+        setCommitment(Array.isArray(p.preferredCommitment) ? (p.preferredCommitment[0] ?? "") : "");
+        setLocation(p.remoteOnly ? "remote" : "hybrid");
+        setGeo("global");
+        setWorkStyle("");
       }
     }).catch(() => {}).finally(() => setLoading(false));
   }, [open]);
