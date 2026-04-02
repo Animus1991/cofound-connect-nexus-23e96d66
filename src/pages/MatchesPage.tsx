@@ -50,13 +50,12 @@ interface MatchItem {
   name: string;
   headline: string | null;
   location: string | null;
+  role: string | null;
   stage: string | null;
   commitment: string | null;
   skills: string[];
-  interests: string[];
   score: number;
   dimensions: Record<string, number>;
-  explanation: string;
   sharedStrengths: string[];
   complementaryStrengths: string[];
   mismatches: string[];
@@ -181,7 +180,11 @@ function MatchCard({
           )}
 
           {/* Explanation */}
-          <p className="text-xs text-slate-400 mt-2.5 italic line-clamp-2">{match.explanation}</p>
+          {match.sharedStrengths.length > 0 && (
+            <p className="text-xs text-muted-foreground mt-2.5 italic line-clamp-2">
+              Shared strengths: {match.sharedStrengths.join(", ")}
+            </p>
+          )}
         </div>
       </div>
 
@@ -303,9 +306,8 @@ export default function MatchesPage() {
         limit: 20,
         stage: stageFilter === "all" ? undefined : stageFilter,
         commitment: commitmentFilter === "all" ? undefined : commitmentFilter,
-        minScore: minScore > 0 ? minScore : undefined,
       });
-      setMatches(res.matches);
+      setMatches(res.matches as MatchItem[]);
       setTotal(res.total);
     } catch {
       toast.error("Failed to load matches");
@@ -346,7 +348,7 @@ export default function MatchesPage() {
   const goodCount = matches.filter((m) => m.score >= 65 && m.score < 80).length;
 
   return (
-    <AppLayout>
+    <AppLayout title="Matches">
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -598,11 +600,11 @@ function MatchPreferencesModal({ open, onClose }: { open: boolean; onClose: () =
         setRoles(JSON.parse(p.lookingForRoles as unknown as string) as string[] || []);
         setSkills(JSON.parse(p.desiredSkills as unknown as string) as string[] || []);
         setIndustries(JSON.parse(p.preferredIndustries as unknown as string) as string[] || []);
-        setStage(p.preferredStage ?? "");
-        setCommitment(p.preferredCommitment ?? "");
-        setLocation(p.workLocationPreference ?? "remote");
-        setGeo(p.geographicOpenness ?? "global");
-        setWorkStyle(p.workStyle ?? "");
+        setStage(Array.isArray(p.preferredStages) ? (p.preferredStages[0] ?? "") : "");
+        setCommitment(Array.isArray(p.preferredCommitment) ? (p.preferredCommitment[0] ?? "") : "");
+        setLocation(p.remoteOnly ? "remote" : "hybrid");
+        setGeo("global");
+        setWorkStyle("");
       }
     }).catch(() => {}).finally(() => setLoading(false));
   }, [open]);
@@ -617,11 +619,9 @@ function MatchPreferencesModal({ open, onClose }: { open: boolean; onClose: () =
         lookingForRoles: roles,
         desiredSkills: skills,
         preferredIndustries: industries,
-        preferredStage: stage || undefined,
-        preferredCommitment: commitment || undefined,
-        workLocationPreference: location as "remote" | "hybrid" | "onsite",
-        geographicOpenness: geo as "local" | "regional" | "global",
-        workStyle: workStyle || undefined,
+        preferredStages: stage ? [stage] : undefined,
+        preferredCommitment: commitment ? [commitment] : undefined,
+        remoteOnly: location === "remote",
       });
       toast.success("Preferences saved");
       onClose();
