@@ -302,9 +302,8 @@ export default function MatchesPage() {
         limit: 20,
         stage: stageFilter === "all" ? undefined : stageFilter,
         commitment: commitmentFilter === "all" ? undefined : commitmentFilter,
-        minScore: minScore > 0 ? minScore : undefined,
       });
-      setMatches(res.matches);
+      setMatches(res.matches as MatchItem[]);
       setTotal(res.total);
     } catch {
       toast.error("Failed to load matches");
