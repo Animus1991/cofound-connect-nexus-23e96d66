@@ -49,6 +49,8 @@ const OrganizationDetailPage = lazy(() => import("./pages/OrganizationDetailPage
 const SavedProfilesPage = lazy(() => import("./pages/SavedProfilesPage"));
 const TenantLandingPage = lazy(() => import("./pages/TenantLandingPage"));
 const SsoCallbackPage = lazy(() => import("./pages/SsoCallbackPage"));
+const PricingPage = lazy(() => import("./pages/PricingPage"));
+const BillingPage = lazy(() => import("./pages/BillingPage"));
 
 function PageLoader() {
   return (
@@ -101,6 +103,8 @@ function AnimatedRoutes() {
         <Route path="/saved" element={<PageTransition><SavedProfilesPage /></PageTransition>} />
         <Route path="/t/:slug" element={<TenantLandingPage />} />
         <Route path="/sso/callback" element={<SsoCallbackPage />} />
+        <Route path="/pricing" element={<PageTransition><PricingPage /></PageTransition>} />
+        <Route path="/billing" element={<PageTransition><BillingPage /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>

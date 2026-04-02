@@ -30,6 +30,9 @@ import { tenantsRoutes } from "./routes/tenants.js";
 import { publicTenantsRoutes } from "./routes/publicTenants.js";
 import { ssoRoutes } from "./routes/sso.js";
 import { publicSsoRoutes } from "./routes/publicSso.js";
+import billingRoutes from "./routes/billing.js";
+import tenantBillingRoutes from "./routes/tenantBilling.js";
+import adminBillingRoutes from "./routes/adminBilling.js";
 
 const PORT = parseInt(process.env.PORT ?? "3001", 10);
 
@@ -98,6 +101,9 @@ app.route("/api/tenants", tenantsRoutes);
 app.route("/api/public/tenants", publicTenantsRoutes);
 app.route("/api/sso", ssoRoutes);
 app.route("/api/public/sso", publicSsoRoutes);
+app.route("/api/billing", billingRoutes);
+app.route("/api/tenant-billing", tenantBillingRoutes);
+app.route("/api/admin/billing", adminBillingRoutes);
 
 // ── 404 fallback ─────────────────────────────────────────────────────────────
 app.notFound((c) => c.json({ error: "Not found" }, 404));

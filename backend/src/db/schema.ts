@@ -774,3 +774,438 @@ export const ssoStateTokens = sqliteTable("sso_state_tokens", {
   uniqueIndex("idx_sso_state_state").on(table.state),
   index("idx_sso_state_expires").on(table.expiresAt),
 ]);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BILLING & SUBSCRIPTION MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── Billing Plans ─────────────────────────────────────────────────────────
+// The product catalog: every plan the platform offers, including enterprise.
+
+export const billingPlans = sqliteTable("billing_plans", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  /** Internal slug, e.g. "free", "premium", "org_starter", "org_pro", "enterprise" */
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description"),
+  /**
+   * Plan tier: individual_free | individual_premium |
+   *             org_starter | org_pro | enterprise | custom
+   */
+  tier: text("tier").notNull().default("individual_free"),
+  /** monthly | annual | one_time | custom */
+  billingCycle: text("billing_cycle").notNull().default("monthly"),
+  /** Price in smallest currency unit (e.g. cents). Null = contact sales. */
+  priceMonthly: integer("price_monthly"),
+  priceAnnual: integer("price_annual"),
+  currency: text("currency").notNull().default("USD"),
+  /** Max users / seats; null = unlimited */
+  seatLimit: integer("seat_limit"),
+  /** JSON: feature flags map, e.g. {"sso":true,"whiteLable":true,"advancedAnalytics":false} */
+  featureFlags: text("feature_flags").notNull().default("{}"),
+  /** JSON: limits map, e.g. {"matchesPerMonth":50,"exportRows":1000} */
+  limits: text("limits").notNull().default("{}"),
+  /** JSON: human-readable feature list for pricing page */
+  marketingFeatures: text("marketing_features").notNull().default("[]"),
+  /** JSON: overage policy config */
+  overagePolicy: text("overage_policy").notNull().default("{}"),
+  isSsoIncluded: integer("is_sso_included", { mode: "boolean" }).notNull().default(false),
+  isWhiteLabelIncluded: integer("is_white_label_included", { mode: "boolean" }).notNull().default(false),
+  isAdvancedAnalyticsIncluded: integer("is_advanced_analytics_included", { mode: "boolean" }).notNull().default(false),
+  isMentorModuleIncluded: integer("is_mentor_module_included", { mode: "boolean" }).notNull().default(true),
+  isCommunityModuleIncluded: integer("is_community_module_included", { mode: "boolean" }).notNull().default(true),
+  isCohortModuleIncluded: integer("is_cohort_module_included", { mode: "boolean" }).notNull().default(false),
+  isPublic: integer("is_public", { mode: "boolean" }).notNull().default(true),
+  trialDays: integer("trial_days").notNull().default(0),
+  sortOrder: integer("sort_order").notNull().default(0),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_billing_plans_slug").on(table.slug),
+  index("idx_billing_plans_tier").on(table.tier),
+]);
+
+// ── Customer Accounts ─────────────────────────────────────────────────────
+// Billing identity for an individual user (B2C).
+
+export const customerAccounts = sqliteTable("customer_accounts", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  /** individual | enterprise */
+  customerType: text("customer_type").notNull().default("individual"),
+  /** Stripe / payment provider customer ID */
+  providerCustomerId: text("provider_customer_id"),
+  billingEmail: text("billing_email"),
+  billingName: text("billing_name"),
+  billingAddressLine1: text("billing_address_line1"),
+  billingAddressLine2: text("billing_address_line2"),
+  billingCity: text("billing_city"),
+  billingState: text("billing_state"),
+  billingPostalCode: text("billing_postal_code"),
+  billingCountry: text("billing_country"),
+  taxId: text("tax_id"),
+  vatNumber: text("vat_number"),
+  legalEntityName: text("legal_entity_name"),
+  currency: text("currency").notNull().default("USD"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_customer_accounts_user").on(table.userId),
+  index("idx_customer_accounts_provider").on(table.providerCustomerId),
+]);
+
+// ── Tenant Billing Accounts ───────────────────────────────────────────────
+// Billing identity for an organization / tenant (B2B).
+
+export const tenantBillingAccounts = sqliteTable("tenant_billing_accounts", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  /** Stripe / payment provider customer ID */
+  providerCustomerId: text("provider_customer_id"),
+  billingContactName: text("billing_contact_name"),
+  billingContactEmail: text("billing_contact_email"),
+  billingContactPhone: text("billing_contact_phone"),
+  billingAddressLine1: text("billing_address_line1"),
+  billingAddressLine2: text("billing_address_line2"),
+  billingCity: text("billing_city"),
+  billingState: text("billing_state"),
+  billingPostalCode: text("billing_postal_code"),
+  billingCountry: text("billing_country"),
+  taxId: text("tax_id"),
+  vatNumber: text("vat_number"),
+  legalEntityName: text("legal_entity_name"),
+  purchaseOrderNumber: text("purchase_order_number"),
+  currency: text("currency").notNull().default("USD"),
+  /** JSON: notes / contract details for enterprise accounts */
+  contractDetails: text("contract_details").notNull().default("{}"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_tenant_billing_tenant").on(table.tenantId),
+]);
+
+// ── Subscriptions ─────────────────────────────────────────────────────────
+// One active subscription per customer or tenant.
+
+export const subscriptions = sqliteTable("subscriptions", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  planId: text("plan_id").notNull().references(() => billingPlans.id),
+  /** Either set (B2C) or null */
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+  /** Either set (B2B) or null */
+  tenantId: text("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
+  /** individual | tenant | enterprise */
+  customerType: text("customer_type").notNull().default("individual"),
+  /**
+   * Status: trialing | active | past_due | canceled | unpaid |
+   *          paused | incomplete | incomplete_expired
+   */
+  status: text("status").notNull().default("active"),
+  billingCycle: text("billing_cycle").notNull().default("monthly"),
+  startDate: text("start_date").notNull().default(sql`(datetime('now'))`),
+  currentPeriodStart: text("current_period_start").notNull().default(sql`(datetime('now'))`),
+  currentPeriodEnd: text("current_period_end"),
+  renewalDate: text("renewal_date"),
+  cancelAtPeriodEnd: integer("cancel_at_period_end", { mode: "boolean" }).notNull().default(false),
+  canceledAt: text("canceled_at"),
+  cancelReason: text("cancel_reason"),
+  trialStart: text("trial_start"),
+  trialEnd: text("trial_end"),
+  seatLimit: integer("seat_limit"),
+  activeSeatCount: integer("active_seat_count").notNull().default(0),
+  /** Payment provider subscription ID */
+  providerSubscriptionId: text("provider_subscription_id"),
+  /** JSON: feature flag overrides for this specific subscription (admin overrides) */
+  featureFlagOverrides: text("feature_flag_overrides").notNull().default("{}"),
+  /** JSON: limit overrides for this subscription */
+  limitOverrides: text("limit_overrides").notNull().default("{}"),
+  /** Grace period for failed payments (ISO date) */
+  gracePeriodEnd: text("grace_period_end"),
+  lastPaymentStatus: text("last_payment_status"),
+  lastPaymentAt: text("last_payment_at"),
+  failedPaymentCount: integer("failed_payment_count").notNull().default(0),
+  /** Admin notes for enterprise / custom deals */
+  adminNotes: text("admin_notes"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index("idx_subscriptions_user").on(table.userId),
+  index("idx_subscriptions_tenant").on(table.tenantId),
+  index("idx_subscriptions_plan").on(table.planId),
+  index("idx_subscriptions_status").on(table.status),
+  index("idx_subscriptions_provider").on(table.providerSubscriptionId),
+]);
+
+// ── Subscription Items ────────────────────────────────────────────────────
+// Line items within a subscription (base plan + add-ons).
+
+export const subscriptionItems = sqliteTable("subscription_items", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  subscriptionId: text("subscription_id").notNull().references(() => subscriptions.id, { onDelete: "cascade" }),
+  /** "plan" | "addon" | "seat_pack" | "usage" */
+  itemType: text("item_type").notNull().default("plan"),
+  description: text("description").notNull(),
+  quantity: integer("quantity").notNull().default(1),
+  unitAmountCents: integer("unit_amount_cents").notNull().default(0),
+  currency: text("currency").notNull().default("USD"),
+  providerItemId: text("provider_item_id"),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index("idx_sub_items_subscription").on(table.subscriptionId),
+]);
+
+// ── Payment Methods ───────────────────────────────────────────────────────
+
+export const paymentMethods = sqliteTable("payment_methods", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+  tenantId: text("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
+  /** "card" | "bank_transfer" | "sepa_debit" | "paypal" | "invoice" */
+  methodType: text("method_type").notNull().default("card"),
+  providerPaymentMethodId: text("provider_payment_method_id"),
+  /** Last 4 digits for cards */
+  last4: text("last4"),
+  brand: text("brand"),
+  expMonth: integer("exp_month"),
+  expYear: integer("exp_year"),
+  isDefault: integer("is_default", { mode: "boolean" }).notNull().default(false),
+  billingName: text("billing_name"),
+  billingEmail: text("billing_email"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index("idx_payment_methods_user").on(table.userId),
+  index("idx_payment_methods_tenant").on(table.tenantId),
+]);
+
+// ── Invoices ──────────────────────────────────────────────────────────────
+
+export const invoices = sqliteTable("invoices", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  subscriptionId: text("subscription_id").references(() => subscriptions.id, { onDelete: "set null" }),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  tenantId: text("tenant_id").references(() => tenants.id, { onDelete: "set null" }),
+  /** Human-readable invoice number, e.g. INV-2025-00042 */
+  invoiceNumber: text("invoice_number").notNull(),
+  /** draft | open | paid | void | uncollectible */
+  status: text("status").notNull().default("draft"),
+  currency: text("currency").notNull().default("USD"),
+  /** Total before tax, cents */
+  subtotalCents: integer("subtotal_cents").notNull().default(0),
+  /** Tax amount, cents */
+  taxCents: integer("tax_cents").notNull().default(0),
+  /** Discount applied, cents */
+  discountCents: integer("discount_cents").notNull().default(0),
+  /** Total due, cents */
+  totalCents: integer("total_cents").notNull().default(0),
+  /** Amount paid, cents */
+  amountPaidCents: integer("amount_paid_cents").notNull().default(0),
+  taxRate: text("tax_rate"),
+  taxRegion: text("tax_region"),
+  billingName: text("billing_name"),
+  billingEmail: text("billing_email"),
+  billingAddressLine1: text("billing_address_line1"),
+  billingCity: text("billing_city"),
+  billingCountry: text("billing_country"),
+  vatNumber: text("vat_number"),
+  legalEntityName: text("legal_entity_name"),
+  periodStart: text("period_start"),
+  periodEnd: text("period_end"),
+  dueDate: text("due_date"),
+  paidAt: text("paid_at"),
+  voidedAt: text("voided_at"),
+  providerInvoiceId: text("provider_invoice_id"),
+  providerHostedUrl: text("provider_hosted_url"),
+  providerPdfUrl: text("provider_pdf_url"),
+  /** JSON: raw provider invoice data for debugging */
+  providerData: text("provider_data").notNull().default("{}"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_invoices_number").on(table.invoiceNumber),
+  index("idx_invoices_user").on(table.userId),
+  index("idx_invoices_tenant").on(table.tenantId),
+  index("idx_invoices_subscription").on(table.subscriptionId),
+  index("idx_invoices_status").on(table.status),
+  index("idx_invoices_created").on(table.createdAt),
+]);
+
+// ── Invoice Lines ─────────────────────────────────────────────────────────
+
+export const invoiceLines = sqliteTable("invoice_lines", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  invoiceId: text("invoice_id").notNull().references(() => invoices.id, { onDelete: "cascade" }),
+  description: text("description").notNull(),
+  quantity: integer("quantity").notNull().default(1),
+  unitAmountCents: integer("unit_amount_cents").notNull().default(0),
+  totalCents: integer("total_cents").notNull().default(0),
+  currency: text("currency").notNull().default("USD"),
+  periodStart: text("period_start"),
+  periodEnd: text("period_end"),
+  /** "subscription" | "addon" | "usage" | "credit" | "adjustment" */
+  lineType: text("line_type").notNull().default("subscription"),
+  providerLineId: text("provider_line_id"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index("idx_invoice_lines_invoice").on(table.invoiceId),
+]);
+
+// ── Billing Events ────────────────────────────────────────────────────────
+// Immutable audit log of billing actions.
+
+export const billingEvents = sqliteTable("billing_events", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  subscriptionId: text("subscription_id").references(() => subscriptions.id, { onDelete: "set null" }),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  tenantId: text("tenant_id").references(() => tenants.id, { onDelete: "set null" }),
+  /**
+   * Event types:
+   * subscription_created | subscription_upgraded | subscription_downgraded
+   * subscription_canceled | subscription_reactivated | trial_started | trial_ended
+   * payment_succeeded | payment_failed | payment_refunded | invoice_created
+   * seat_added | seat_removed | feature_override | admin_action | coupon_applied
+   */
+  eventType: text("event_type").notNull(),
+  /** success | failure | pending */
+  outcome: text("outcome").notNull().default("success"),
+  /** Actor: user | admin | system | webhook */
+  actor: text("actor").notNull().default("system"),
+  actorId: text("actor_id"),
+  /** JSON: before/after state snapshot for upgrades/downgrades */
+  payload: text("payload").notNull().default("{}"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index("idx_billing_events_subscription").on(table.subscriptionId),
+  index("idx_billing_events_user").on(table.userId),
+  index("idx_billing_events_tenant").on(table.tenantId),
+  index("idx_billing_events_type").on(table.eventType),
+  index("idx_billing_events_created").on(table.createdAt),
+]);
+
+// ── Seat Allocations ──────────────────────────────────────────────────────
+// Individual seat assignments within an org subscription.
+
+export const seatAllocations = sqliteTable("seat_allocations", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  subscriptionId: text("subscription_id").notNull().references(() => subscriptions.id, { onDelete: "cascade" }),
+  tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  /** Email invitation for not-yet-registered users */
+  inviteEmail: text("invite_email"),
+  /** active | pending | revoked */
+  status: text("status").notNull().default("active"),
+  /** founder | investor | mentor | member | admin */
+  role: text("role").notNull().default("member"),
+  allocatedAt: text("allocated_at").notNull().default(sql`(datetime('now'))`),
+  revokedAt: text("revoked_at"),
+  allocatedBy: text("allocated_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index("idx_seat_allocations_subscription").on(table.subscriptionId),
+  index("idx_seat_allocations_tenant").on(table.tenantId),
+  index("idx_seat_allocations_user").on(table.userId),
+]);
+
+// ── Usage Snapshots ───────────────────────────────────────────────────────
+// Periodic snapshots of metered usage per subscription (ready for usage billing).
+
+export const usageSnapshots = sqliteTable("usage_snapshots", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  subscriptionId: text("subscription_id").notNull().references(() => subscriptions.id, { onDelete: "cascade" }),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  tenantId: text("tenant_id").references(() => tenants.id, { onDelete: "set null" }),
+  snapshotDate: text("snapshot_date").notNull(),
+  /** JSON: usage counters, e.g. {"activeSeats":8,"matchRequests":120,"apiCalls":4500} */
+  metrics: text("metrics").notNull().default("{}"),
+  billingPeriodStart: text("billing_period_start"),
+  billingPeriodEnd: text("billing_period_end"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index("idx_usage_snapshots_subscription").on(table.subscriptionId),
+  index("idx_usage_snapshots_date").on(table.snapshotDate),
+]);
+
+// ── Discount Coupons / Promo Codes ────────────────────────────────────────
+
+export const discountCoupons = sqliteTable("discount_coupons", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  code: text("code").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description"),
+  /** percentage | fixed_amount | trial_extension */
+  discountType: text("discount_type").notNull().default("percentage"),
+  /** For percentage: 0–100. For fixed_amount: cents. For trial_extension: days. */
+  discountValue: integer("discount_value").notNull(),
+  currency: text("currency"),
+  /** null = all plans, or JSON array of plan slugs */
+  applicablePlanSlugs: text("applicable_plan_slugs"),
+  /** null = all customer types, or "individual" | "tenant" */
+  applicableCustomerType: text("applicable_customer_type"),
+  maxRedemptions: integer("max_redemptions"),
+  redemptionCount: integer("redemption_count").notNull().default(0),
+  /** Number of billing periods the discount applies (null = forever) */
+  durationMonths: integer("duration_months"),
+  validFrom: text("valid_from"),
+  validUntil: text("valid_until"),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  providerCouponId: text("provider_coupon_id"),
+  createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_discount_coupons_code").on(table.code),
+]);
+
+// ── Trial Periods ─────────────────────────────────────────────────────────
+
+export const trialPeriods = sqliteTable("trial_periods", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  subscriptionId: text("subscription_id").notNull().references(() => subscriptions.id, { onDelete: "cascade" }),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  tenantId: text("tenant_id").references(() => tenants.id, { onDelete: "set null" }),
+  trialPlanId: text("trial_plan_id").references(() => billingPlans.id),
+  startDate: text("start_date").notNull(),
+  endDate: text("end_date").notNull(),
+  /** active | expired | converted | canceled */
+  status: text("status").notNull().default("active"),
+  convertedAt: text("converted_at"),
+  extendedAt: text("extended_at"),
+  extensionDays: integer("extension_days").notNull().default(0),
+  extendedBy: text("extended_by").references(() => users.id, { onDelete: "set null" }),
+  reminderSent7d: integer("reminder_sent_7d", { mode: "boolean" }).notNull().default(false),
+  reminderSent1d: integer("reminder_sent_1d", { mode: "boolean" }).notNull().default(false),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index("idx_trial_periods_subscription").on(table.subscriptionId),
+  index("idx_trial_periods_end").on(table.endDate),
+]);
+
+// ── Add-Ons ───────────────────────────────────────────────────────────────
+// Purchasable feature packs on top of a base plan.
+
+export const addOns = sqliteTable("add_ons", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  /** Internal slug, e.g. "extra_seats_5", "advanced_analytics", "white_label" */
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description"),
+  /** one_time | monthly | annual */
+  billingCycle: text("billing_cycle").notNull().default("monthly"),
+  priceMonthly: integer("price_monthly"),
+  priceAnnual: integer("price_annual"),
+  currency: text("currency").notNull().default("USD"),
+  /** JSON: feature flags this add-on unlocks */
+  featureFlags: text("feature_flags").notNull().default("{}"),
+  /** JSON: limits this add-on adds/overrides */
+  limits: text("limits").notNull().default("{}"),
+  /** null = compatible with all plans, or JSON array of plan slugs */
+  compatiblePlanSlugs: text("compatible_plan_slugs"),
+  isPublic: integer("is_public", { mode: "boolean" }).notNull().default(true),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  providerProductId: text("provider_product_id"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_add_ons_slug").on(table.slug),
+]);

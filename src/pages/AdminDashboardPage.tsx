@@ -50,9 +50,11 @@ import {
   Plus,
   Palette,
   ShieldCheck,
+  CreditCard,
 } from "lucide-react";
 import TenantBrandingPanel from "@/components/admin/TenantBrandingPanel";
 import SSOConfigPanel from "@/components/admin/SSOConfigPanel";
+import BillingAdminPanel from "@/components/admin/BillingAdminPanel";
 import { motion } from "framer-motion";
 
 // Chart data
@@ -156,7 +158,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function AdminDashboardPage() {
-  const [activeSection, setActiveSection] = useState<"overview" | "users" | "moderation" | "taxonomies" | "white-label" | "sso">("overview");
+  const [activeSection, setActiveSection] = useState<"overview" | "users" | "moderation" | "taxonomies" | "white-label" | "sso" | "billing">("overview");
   const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState("all");
 
@@ -173,6 +175,7 @@ export default function AdminDashboardPage() {
     { key: "taxonomies" as const, label: "Taxonomies", icon: Tag },
     { key: "white-label" as const, label: "White-Label", icon: Palette },
     { key: "sso" as const, label: "Enterprise SSO", icon: ShieldCheck },
+    { key: "billing" as const, label: "Billing", icon: CreditCard },
   ];
 
   const stagger = (i: number) => ({ delay: i * 0.06 });
@@ -480,6 +483,21 @@ export default function AdminDashboardPage() {
         {activeSection === "white-label" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
             <TenantBrandingPanel />
+          </motion.div>
+        )}
+
+        {/* Billing */}
+        {activeSection === "billing" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="rounded-xl border border-border bg-card overflow-hidden"
+          >
+            <div className="border-b border-border px-5 py-4">
+              <h3 className="font-display text-base font-semibold text-foreground">Billing &amp; Subscriptions</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Manage plans, subscriptions, invoices, coupons, and billing events across all users and tenants.
+              </p>
+            </div>
+            <BillingAdminPanel />
           </motion.div>
         )}
 
