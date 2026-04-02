@@ -179,6 +179,12 @@ export default function CommunityDetailPage() {
                   <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
                     <MessageSquare className="h-3.5 w-3.5" /> {post.comments}
                   </button>
+                  <Link
+                    to={`/communities/${id}/posts/${post.id}`}
+                    className="ml-auto text-[11px] text-primary hover:underline"
+                  >
+                    Read more →
+                  </Link>
                 </div>
               </motion.div>
             ))}

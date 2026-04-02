@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -252,13 +253,21 @@ function MatchCard({
 
       {/* Actions */}
       <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-700/40">
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1 transition-colors"
-        >
-          {expanded ? "Hide breakdown" : "Show breakdown"}
-          <ChevronRight className={`w-3 h-3 transition-transform ${expanded ? "rotate-90" : ""}`} />
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1 transition-colors"
+          >
+            {expanded ? "Hide breakdown" : "Show breakdown"}
+            <ChevronRight className={`w-3 h-3 transition-transform ${expanded ? "rotate-90" : ""}`} />
+          </button>
+          <Link
+            to={`/matches/${match.userId}`}
+            className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+          >
+            View profile →
+          </Link>
+        </div>
         {connected ? (
           <span className="flex items-center gap-1.5 text-xs text-emerald-400">
             <CheckCircle2 className="w-3.5 h-3.5" /> Request sent

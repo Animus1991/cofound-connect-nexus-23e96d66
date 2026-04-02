@@ -294,6 +294,10 @@ export const api = {
         }>;
         unreadCount: number;
       }>("/api/notifications"),
+    markRead: (id: string) =>
+      request<{ ok: boolean }>(`/api/notifications/${id}/read`, { method: "PATCH" }).catch(() => ({ ok: true })),
+    markAllRead: () =>
+      request<{ ok: boolean }>("/api/notifications/read-all", { method: "PATCH" }).catch(() => ({ ok: true })),
   },
   activity: {
     list: (limit = 20) =>

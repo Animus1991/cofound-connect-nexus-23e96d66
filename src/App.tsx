@@ -39,6 +39,12 @@ const OAuthCallbackPage = lazy(() => import("./pages/OAuthCallbackPage"));
 const StartupPage = lazy(() => import("./pages/StartupPage"));
 const MatchesPage = lazy(() => import("./pages/MatchesPage"));
 const PublicProfilePage = lazy(() => import("./pages/PublicProfilePage"));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+const MatchDetailPage = lazy(() => import("./pages/MatchDetailPage"));
+const MentorDetailPage = lazy(() => import("./pages/MentorDetailPage"));
+const PostDetailPage = lazy(() => import("./pages/PostDetailPage"));
+const OrganizationsPage = lazy(() => import("./pages/OrganizationsPage"));
+const OrganizationDetailPage = lazy(() => import("./pages/OrganizationDetailPage"));
 
 function PageLoader() {
   return (
@@ -81,7 +87,13 @@ function AnimatedRoutes() {
         <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
         <Route path="/startup" element={<PageTransition><StartupPage /></PageTransition>} />
         <Route path="/matches" element={<PageTransition><MatchesPage /></PageTransition>} />
+        <Route path="/matches/:userId" element={<PageTransition><MatchDetailPage /></PageTransition>} />
         <Route path="/profile/:id" element={<PageTransition><PublicProfilePage /></PageTransition>} />
+        <Route path="/notifications" element={<PageTransition><NotificationsPage /></PageTransition>} />
+        <Route path="/mentors/:id" element={<PageTransition><MentorDetailPage /></PageTransition>} />
+        <Route path="/communities/:id/posts/:postId" element={<PageTransition><PostDetailPage /></PageTransition>} />
+        <Route path="/organizations" element={<PageTransition><OrganizationsPage /></PageTransition>} />
+        <Route path="/organizations/:id" element={<PageTransition><OrganizationDetailPage /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>

@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect, useCallback, useRef } from "react";
+import { ReactNode, useState, useEffect, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { MobileHeader, MobileBottomNav } from "@/components/MobileNav";
@@ -23,17 +23,20 @@ import {
   X,
   Building2,
   Sparkles,
+  Network,
 } from "lucide-react";
 
 const navItems = [
   { icon: Home, label: "Dashboard", path: "/dashboard" },
   { icon: Sparkles, label: "Matches", path: "/matches" },
   { icon: Search, label: "Discover", path: "/discover" },
+  { icon: Network, label: "Network", path: "/network" },
   { icon: MessageSquare, label: "Messages", path: "/messages" },
   { icon: GraduationCap, label: "Mentors", path: "/mentors" },
   { icon: Users, label: "Communities", path: "/communities" },
   { icon: Briefcase, label: "Opportunities", path: "/opportunities" },
   { icon: Target, label: "Milestones", path: "/milestones" },
+  { icon: Building2, label: "Organizations", path: "/organizations" },
 ];
 
 interface AppLayoutProps {
@@ -52,15 +55,6 @@ function getUserInitials(name?: string, email?: string): string {
   return "?";
 }
 
-type NotificationItem = {
-  id: string;
-  type: "connection_request" | "connection_accepted" | "new_message";
-  title: string;
-  body: string;
-  createdAt: string;
-  read: boolean;
-  metadata: Record<string, unknown>;
-};
 
 export default function AppLayout({ title, children, headerActions }: AppLayoutProps) {
   const location = useLocation();
@@ -68,16 +62,12 @@ export default function AppLayout({ title, children, headerActions }: AppLayoutP
   const { user, isAuthenticated, logout } = useAuth();
   const isDemo = user?.email === DEMO_EMAIL;
   const initials = getUserInitials(user?.name, user?.email);
-  const [notifOpen, setNotifOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const notifRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = useCallback(async () => {
     if (!isAuthenticated) return;
     try {
-      const { notifications: items, unreadCount: count } = await api.notifications.list();
-      setNotifications(items);
+      const { unreadCount: count } = await api.notifications.list();
       setUnreadCount(count);
     } catch {
       /* backend may be offline */
@@ -89,18 +79,6 @@ export default function AppLayout({ title, children, headerActions }: AppLayoutP
     const interval = setInterval(fetchNotifications, 60_000);
     return () => clearInterval(interval);
   }, [fetchNotifications]);
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    if (!notifOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
-        setNotifOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [notifOpen]);
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -178,8 +156,24 @@ export default function AppLayout({ title, children, headerActions }: AppLayoutP
                 : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
             }`}
           >
-            <Building2 className="h-4 w-4" />
+            <Rocket className="h-4 w-4" />
             Startup
+          </Link>
+          <Link
+            to="/notifications"
+            className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
+              location.pathname === "/notifications"
+                ? "bg-primary/10 text-primary font-medium"
+                : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            }`}
+          >
+            <Bell className="h-4 w-4" />
+            Notifications
+            {unreadCount > 0 && (
+              <span className="ml-auto flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
           </Link>
           <Link
             to="/admin"
@@ -220,75 +214,20 @@ export default function AppLayout({ title, children, headerActions }: AppLayoutP
               <GlobalSearch />
               {headerActions}
               <ThemeToggle />
-              <div className="relative" ref={notifRef}>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="relative h-8 w-8"
-                  onClick={() => { setNotifOpen((o) => !o); if (!notifOpen) fetchNotifications(); }}
-                >
-                  <Bell className="h-4 w-4" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
-                      {unreadCount > 9 ? "9+" : unreadCount}
-                    </span>
-                  )}
-                </Button>
-
-                {notifOpen && (
-                  <div className="absolute right-0 top-10 z-50 w-80 rounded-xl border border-border bg-popover shadow-lg overflow-hidden">
-                    <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-                      <span className="text-sm font-semibold text-foreground">Notifications</span>
-                      {unreadCount > 0 && (
-                        <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-medium text-destructive">
-                          {unreadCount} new
-                        </span>
-                      )}
-                    </div>
-                    <div className="max-h-72 overflow-y-auto">
-                      {notifications.length === 0 ? (
-                        <div className="py-8 text-center text-sm text-muted-foreground">No notifications yet</div>
-                      ) : (
-                        notifications.map((n) => (
-                          <div
-                            key={n.id}
-                            className={`flex gap-3 px-4 py-3 transition-colors hover:bg-secondary/50 cursor-pointer ${
-                              !n.read ? "bg-primary/5" : ""
-                            }`}
-                            onClick={() => {
-                              setNotifOpen(false);
-                              if (n.type === "connection_request" || n.type === "connection_accepted") navigate("/network");
-                              else if (n.type === "new_message") navigate("/messages");
-                            }}
-                          >
-                            <div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs ${
-                              n.type === "connection_request" ? "bg-primary/10 text-primary" :
-                              n.type === "connection_accepted" ? "bg-primary/20 text-primary" :
-                              "bg-accent/15 text-accent"
-                            }`}>
-                              {n.type === "new_message" ? "💬" : n.type === "connection_accepted" ? "🤝" : "👋"}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-medium text-foreground truncate">{n.title}</p>
-                              <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{n.body}</p>
-                            </div>
-                            {!n.read && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                    <div className="border-t border-border px-4 py-2">
-                      <Link
-                        to="/network"
-                        className="block text-center text-xs text-primary hover:underline"
-                        onClick={() => setNotifOpen(false)}
-                      >
-                        View all activity
-                      </Link>
-                    </div>
-                  </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative h-8 w-8"
+                onClick={() => navigate("/notifications")}
+                title="Notifications"
+              >
+                <Bell className="h-4 w-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
                 )}
-              </div>
+              </Button>
               <Link to="/profile">
                 <div className="h-7 w-7 rounded-full bg-primary/15 flex items-center justify-center transition-colors hover:bg-primary/20">
                   <span className="text-[10px] font-medium text-primary">{initials}</span>

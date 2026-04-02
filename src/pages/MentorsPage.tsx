@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
 import { ProfileCardSkeleton } from "@/components/SkeletonLoaders";
 import { Button } from "@/components/ui/button";
@@ -209,6 +210,12 @@ export default function MentorsPage() {
                       <MessageSquare className="h-3 w-3" />
                     </Button>
                   </div>
+                  <Link
+                    to={`/profile/${mentor.id}`}
+                    className="mt-2 block text-center text-[11px] text-primary hover:underline"
+                  >
+                    View full profile →
+                  </Link>
                 </motion.div>
               ))}
             </motion.div>
