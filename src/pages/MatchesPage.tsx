@@ -344,7 +344,7 @@ export default function MatchesPage() {
   const goodCount = matches.filter((m) => m.score >= 65 && m.score < 80).length;
 
   return (
-    <AppLayout>
+    <AppLayout title="Matches">
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between">
