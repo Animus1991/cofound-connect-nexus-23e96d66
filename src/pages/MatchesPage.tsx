@@ -615,11 +615,9 @@ function MatchPreferencesModal({ open, onClose }: { open: boolean; onClose: () =
         lookingForRoles: roles,
         desiredSkills: skills,
         preferredIndustries: industries,
-        preferredStage: stage || undefined,
-        preferredCommitment: commitment || undefined,
-        workLocationPreference: location as "remote" | "hybrid" | "onsite",
-        geographicOpenness: geo as "local" | "regional" | "global",
-        workStyle: workStyle || undefined,
+        preferredStages: stage ? [stage] : undefined,
+        preferredCommitment: commitment ? [commitment] : undefined,
+        remoteOnly: location === "remote",
       });
       toast.success("Preferences saved");
       onClose();
