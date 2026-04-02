@@ -189,7 +189,7 @@ export default function NetworkPage() {
 
   return (
     <AppLayout title="My Network">
-      <div className="p-6 max-w-5xl mx-auto space-y-6">
+      <div className="px-2 py-3 space-y-5">
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[

@@ -187,7 +187,7 @@ export default function OrganizationsPage() {
 
   return (
     <AppLayout title="Organizations">
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+      <div className="px-2 py-4">
 
         {/* Hero / stats */}
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">

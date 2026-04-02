@@ -267,7 +267,7 @@ export default function NotificationsPage() {
 
   return (
     <AppLayout title="Notifications" headerActions={headerActions}>
-      <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
+      <div className="px-2 py-4">
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="mb-5 h-9 w-full sm:w-auto">
             <TabsTrigger value="notifications" className="gap-2 text-xs">

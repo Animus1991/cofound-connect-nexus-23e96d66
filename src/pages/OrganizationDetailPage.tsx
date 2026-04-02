@@ -117,7 +117,7 @@ export default function OrganizationDetailPage() {
   if (notFound || !org) {
     return (
       <AppLayout title="Organization">
-        <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+        <div className="px-2 py-4">
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary">
               <Building2 className="h-7 w-7 text-muted-foreground" />
@@ -141,7 +141,7 @@ export default function OrganizationDetailPage() {
 
   return (
     <AppLayout title={org.name}>
-      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+      <div className="px-2 py-4">
         <Link
           to="/organizations"
           className="mb-5 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"

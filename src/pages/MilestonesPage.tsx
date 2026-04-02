@@ -179,7 +179,7 @@ export default function MilestonesPage() {
         </Button>
       }
     >
-      <div className="p-4 sm:p-6 space-y-5 max-w-[1100px] mx-auto">
+      <div className="px-2 py-3 space-y-4">
         {/* Overview */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-primary/20 bg-card-gradient p-5 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

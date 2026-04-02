@@ -201,7 +201,7 @@ export default function PostDetailPage() {
   if (error || !post) {
     return (
       <AppLayout title="Post">
-        <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
+        <div className="px-2 py-4">
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary">
               <AlertCircle className="h-6 w-6 text-muted-foreground" />
@@ -221,7 +221,7 @@ export default function PostDetailPage() {
 
   return (
     <AppLayout title={post.title.length > 40 ? post.title.slice(0, 40) + "…" : post.title}>
-      <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
+      <div className="px-2 py-4">
         {/* Back */}
         <Link
           to={`/communities/${communityId}`}

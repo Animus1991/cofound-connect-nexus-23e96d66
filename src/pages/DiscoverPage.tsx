@@ -337,7 +337,7 @@ export default function DiscoverPage() {
 
   return (
     <AppLayout title="Discover">
-      <div className="p-4 sm:p-6 space-y-6">
+      <div className="px-2 py-3 space-y-4">
         {/* Search & Filters */}
         <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row gap-3">

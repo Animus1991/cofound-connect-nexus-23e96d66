@@ -106,7 +106,7 @@ export default function MentorsPage() {
         </div>
       }
     >
-      <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto">
+      <div className="px-2 py-3 space-y-5">
         {/* Mobile search */}
         <div className="sm:hidden">
           <div className="relative">

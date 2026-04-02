@@ -103,7 +103,7 @@ function ScoreRing({ score }: { score: number }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-sm font-bold leading-none" style={{ color }}>{score}</span>
-        <span className="text-[9px] text-slate-400 mt-0.5">match</span>
+        <span className="text-[9px] text-muted-foreground mt-0.5">match</span>
       </div>
     </div>
   );
@@ -128,11 +128,11 @@ function MatchCard({
       layout
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-5 hover:border-slate-600/70 transition-all group"
+      className="bg-card border border-border rounded-2xl p-5 hover:border-primary/20 transition-all group"
     >
       <div className="flex items-start gap-4">
         {/* Avatar */}
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
+        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-white font-semibold flex-shrink-0">
           {initials}
         </div>
 
@@ -140,9 +140,9 @@ function MatchCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <h3 className="font-semibold text-white text-sm">{match.name}</h3>
+              <h3 className="font-semibold text-foreground text-sm">{match.name}</h3>
               {match.headline && (
-                <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{match.headline}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{match.headline}</p>
               )}
             </div>
             <ScoreRing score={match.score} />
@@ -150,17 +150,17 @@ function MatchCard({
 
           <div className="flex flex-wrap gap-2 mt-2">
             {match.location && (
-              <span className="flex items-center gap-1 text-xs text-slate-400">
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
                 <MapPin className="w-3 h-3" />{match.location}
               </span>
             )}
             {match.stage && (
-              <Badge variant="secondary" className="text-xs py-0 px-2 bg-slate-700/60 text-slate-300">
+              <Badge variant="secondary" className="text-xs py-0 px-2 bg-secondary/50 text-foreground/80">
                 {STAGE_LABELS[match.stage] ?? match.stage}
               </Badge>
             )}
             {match.commitment && (
-              <Badge variant="secondary" className="text-xs py-0 px-2 bg-slate-700/60 text-slate-300">
+              <Badge variant="secondary" className="text-xs py-0 px-2 bg-secondary/50 text-foreground/80">
                 {COMMITMENT_LABELS[match.commitment] ?? match.commitment}
               </Badge>
             )}
@@ -170,12 +170,12 @@ function MatchCard({
           {match.skills.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-2.5">
               {match.skills.slice(0, 5).map((skill) => (
-                <span key={skill} className="text-xs bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 px-2 py-0.5 rounded-full">
+                <span key={skill} className="text-xs bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full">
                   {skill}
                 </span>
               ))}
               {match.skills.length > 5 && (
-                <span className="text-xs text-slate-500">+{match.skills.length - 5} more</span>
+                <span className="text-xs text-muted-foreground/70">+{match.skills.length - 5} more</span>
               )}
             </div>
           )}
@@ -198,21 +198,21 @@ function MatchCard({
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="mt-4 pt-4 border-t border-slate-700/50 grid grid-cols-2 gap-2.5">
+            <div className="mt-4 pt-4 border-t border-border/50 grid grid-cols-2 gap-2.5">
               {Object.entries(match.dimensions).map(([key, val]) => {
                 const meta = DIMENSION_LABELS[key];
                 if (!meta) return null;
                 const Icon = meta.icon;
-                const col = val >= 75 ? "bg-emerald-500" : val >= 55 ? "bg-blue-500" : val >= 35 ? "bg-amber-500" : "bg-red-500";
+                const col = val >= 75 ? "bg-green-500" : val >= 55 ? "bg-blue-500" : val >= 35 ? "bg-amber-500" : "bg-red-500";
                 return (
                   <div key={key} className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1 text-xs text-slate-400">
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Icon className="w-3 h-3" />{meta.label}
                       </span>
-                      <span className="text-xs text-slate-300 font-medium">{val}%</span>
+                      <span className="text-xs text-foreground/80 font-medium">{val}%</span>
                     </div>
-                    <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${val}%` }}
@@ -230,19 +230,19 @@ function MatchCard({
                 {match.sharedStrengths.length > 0 && (
                   <div className="flex gap-1.5 items-start">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 mt-0.5 flex-shrink-0" />
-                    <span className="text-slate-300">Shared: {match.sharedStrengths.join(", ")}</span>
+                    <span className="text-foreground/80">Shared: {match.sharedStrengths.join(", ")}</span>
                   </div>
                 )}
                 {match.complementaryStrengths.length > 0 && (
                   <div className="flex gap-1.5 items-start">
                     <Star className="w-3.5 h-3.5 text-blue-400 mt-0.5 flex-shrink-0" />
-                    <span className="text-slate-300">They bring: {match.complementaryStrengths.join(", ")}</span>
+                    <span className="text-foreground/80">They bring: {match.complementaryStrengths.join(", ")}</span>
                   </div>
                 )}
                 {match.mismatches.map((m, i) => (
                   <div key={i} className="flex gap-1.5 items-start">
                     <AlertTriangle className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
-                    <span className="text-slate-400">{m}</span>
+                    <span className="text-muted-foreground">{m}</span>
                   </div>
                 ))}
               </div>
@@ -252,24 +252,24 @@ function MatchCard({
       </AnimatePresence>
 
       {/* Actions */}
-      <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-700/40">
+      <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setExpanded(!expanded)}
-            className="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1 transition-colors"
+            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
           >
             {expanded ? "Hide breakdown" : "Show breakdown"}
             <ChevronRight className={`w-3 h-3 transition-transform ${expanded ? "rotate-90" : ""}`} />
           </button>
           <Link
             to={`/matches/${match.userId}`}
-            className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+            className="text-xs text-primary hover:text-primary/80 transition-colors"
           >
             View profile →
           </Link>
         </div>
         {connected ? (
-          <span className="flex items-center gap-1.5 text-xs text-emerald-400">
+          <span className="flex items-center gap-1.5 text-xs text-green-500">
             <CheckCircle2 className="w-3.5 h-3.5" /> Request sent
           </span>
         ) : (
@@ -277,7 +277,7 @@ function MatchCard({
             size="sm"
             onClick={() => onConnect(match)}
             disabled={isConnecting}
-            className="h-7 px-3 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg"
+            className="h-7 px-3 text-xs bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg"
           >
             {isConnecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3 mr-1" />}
             Connect
@@ -358,15 +358,15 @@ export default function MatchesPage() {
 
   return (
     <AppLayout title="Matches">
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="px-2 py-3 space-y-4">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-indigo-400" />
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-primary" />
               Match Discovery
             </h1>
-            <p className="text-slate-400 text-sm mt-1">
+            <p className="text-muted-foreground text-sm mt-1">
               Explainable compatibility scores — find your ideal co-founder or collaborator.
             </p>
           </div>
@@ -375,7 +375,7 @@ export default function MatchesPage() {
               variant="outline"
               size="sm"
               onClick={() => setShowPrefs(true)}
-              className="border-slate-600 text-slate-300 hover:bg-slate-700/50 hover:text-white"
+              className="border-border text-muted-foreground hover:bg-secondary hover:text-foreground"
             >
               <SlidersHorizontal className="w-4 h-4 mr-1.5" />
               Preferences
@@ -385,7 +385,7 @@ export default function MatchesPage() {
               size="sm"
               onClick={load}
               disabled={loading}
-              className="border-slate-600 text-slate-300 hover:bg-slate-700/50 hover:text-white"
+              className="border-border text-muted-foreground hover:bg-secondary hover:text-foreground"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
             </Button>
@@ -395,29 +395,29 @@ export default function MatchesPage() {
         {/* Stats bar */}
         {!loading && total > 0 && (
           <div className="grid grid-cols-3 gap-3">
-            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-3 text-center">
-              <div className="text-xl font-bold text-white">{total}</div>
-              <div className="text-xs text-slate-400 mt-0.5">Potential Matches</div>
+            <div className="bg-card border border-border rounded-xl p-3 text-center">
+              <div className="text-xl font-bold text-foreground">{total}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">Potential Matches</div>
             </div>
-            <div className="bg-slate-800/50 border border-emerald-500/20 rounded-xl p-3 text-center">
-              <div className="text-xl font-bold text-emerald-400">{excellentCount}</div>
-              <div className="text-xs text-slate-400 mt-0.5">Excellent Fits (80+)</div>
+            <div className="bg-card border border-green-500/20 rounded-xl p-3 text-center">
+              <div className="text-xl font-bold text-green-500">{excellentCount}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">Excellent Fits (80+)</div>
             </div>
-            <div className="bg-slate-800/50 border border-blue-500/20 rounded-xl p-3 text-center">
+            <div className="bg-card border border-blue-500/20 rounded-xl p-3 text-center">
               <div className="text-xl font-bold text-blue-400">{goodCount}</div>
-              <div className="text-xs text-slate-400 mt-0.5">Good Fits (65–79)</div>
+              <div className="text-xs text-muted-foreground mt-0.5">Good Fits (65–79)</div>
             </div>
           </div>
         )}
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-3 p-4 bg-slate-800/40 border border-slate-700/40 rounded-xl">
-          <div className="flex items-center gap-2 text-slate-300 text-sm font-medium">
-            <SlidersHorizontal className="w-4 h-4 text-slate-400" />
+        <div className="flex flex-wrap gap-3 p-4 bg-card/60 border border-border rounded-xl">
+          <div className="flex items-center gap-2 text-foreground/80 text-sm font-medium">
+            <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
             Filters
           </div>
           <Select value={stageFilter} onValueChange={setStageFilter}>
-            <SelectTrigger className="w-40 h-8 text-xs bg-slate-700/50 border-slate-600 text-slate-300">
+            <SelectTrigger className="w-40 h-8 text-xs">
               <SelectValue placeholder="Any Stage" />
             </SelectTrigger>
             <SelectContent>
@@ -430,7 +430,7 @@ export default function MatchesPage() {
             </SelectContent>
           </Select>
           <Select value={commitmentFilter} onValueChange={setCommitmentFilter}>
-            <SelectTrigger className="w-40 h-8 text-xs bg-slate-700/50 border-slate-600 text-slate-300">
+            <SelectTrigger className="w-40 h-8 text-xs">
               <SelectValue placeholder="Any Commitment" />
             </SelectTrigger>
             <SelectContent>
@@ -441,7 +441,7 @@ export default function MatchesPage() {
             </SelectContent>
           </Select>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400">Min score</span>
+            <span className="text-xs text-muted-foreground">Min score</span>
             <Input
               type="number"
               min={0}
@@ -449,14 +449,14 @@ export default function MatchesPage() {
               value={minScore || ""}
               onChange={(e) => setMinScore(parseInt(e.target.value || "0", 10))}
               placeholder="0"
-              className="w-20 h-8 text-xs bg-slate-700/50 border-slate-600 text-slate-300"
+              className="w-20 h-8 text-xs"
             />
           </div>
           {(stageFilter !== "all" || commitmentFilter !== "all" || minScore > 0) && (
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 text-xs text-slate-400 hover:text-white px-2"
+              className="h-8 text-xs text-muted-foreground hover:text-foreground px-2"
               onClick={() => { setStageFilter("all"); setCommitmentFilter("all"); setMinScore(0); }}
             >
               <X className="w-3 h-3 mr-1" /> Clear
@@ -468,35 +468,35 @@ export default function MatchesPage() {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-5 animate-pulse">
+              <div key={i} className="bg-card border border-border rounded-2xl p-5 animate-pulse">
                 <div className="flex gap-4">
-                  <div className="w-12 h-12 rounded-full bg-slate-700" />
+                  <div className="w-12 h-12 rounded-full bg-secondary" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-slate-700 rounded w-32" />
-                    <div className="h-3 bg-slate-700 rounded w-48" />
+                    <div className="h-4 bg-secondary rounded w-32" />
+                    <div className="h-3 bg-secondary rounded w-48" />
                     <div className="flex gap-2 mt-2">
-                      <div className="h-5 bg-slate-700 rounded w-16" />
-                      <div className="h-5 bg-slate-700 rounded w-20" />
+                      <div className="h-5 bg-secondary rounded w-16" />
+                      <div className="h-5 bg-secondary rounded w-20" />
                     </div>
                   </div>
-                  <div className="w-16 h-16 rounded-full bg-slate-700" />
+                  <div className="w-16 h-16 rounded-full bg-secondary" />
                 </div>
               </div>
             ))}
           </div>
         ) : matches.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 bg-slate-800/80 rounded-2xl flex items-center justify-center mb-4">
-              <Users className="w-8 h-8 text-slate-500" />
+            <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mb-4">
+              <Users className="w-8 h-8 text-muted-foreground/70" />
             </div>
-            <h3 className="text-lg font-semibold text-white mb-2">No matches found</h3>
-            <p className="text-slate-400 text-sm max-w-sm mb-4">
+            <h3 className="text-lg font-semibold text-foreground mb-2">No matches found</h3>
+            <p className="text-muted-foreground text-sm max-w-sm mb-4">
               Complete your profile and set matching preferences to get better match suggestions.
             </p>
             <Button
               size="sm"
               onClick={() => setShowPrefs(true)}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               Set Preferences
             </Button>
@@ -520,50 +520,49 @@ export default function MatchesPage() {
 
       {/* Connect modal */}
       <Dialog open={!!connectTarget} onOpenChange={() => setConnectTarget(null)}>
-        <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-indigo-400" />
+              <UserPlus className="w-5 h-5 text-primary" />
               Connect with {connectTarget?.name}
             </DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogDescription className="text-muted-foreground">
               Add a personal note to increase your chances of a response.
             </DialogDescription>
           </DialogHeader>
           {connectTarget && (
             <div className="space-y-4 pt-2">
-              <div className="bg-slate-800/60 rounded-xl p-3 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+              <div className="bg-secondary/30 rounded-xl p-3 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
                   {connectTarget.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
                 </div>
                 <div>
                   <div className="font-medium text-sm">{connectTarget.name}</div>
-                  {connectTarget.headline && <div className="text-xs text-slate-400">{connectTarget.headline}</div>}
+                  {connectTarget.headline && <div className="text-xs text-muted-foreground">{connectTarget.headline}</div>}
                 </div>
                 <div className="ml-auto">
                   <ScoreRing score={connectTarget.score} />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-slate-300 text-sm">Personal note <span className="text-slate-500">(optional)</span></Label>
+                <Label className="text-foreground/80 text-sm">Personal note <span className="text-muted-foreground/70">(optional)</span></Label>
                 <Textarea
                   placeholder="Hi! I noticed we have complementary skills in..."
                   value={connectNote}
                   onChange={(e) => setConnectNote(e.target.value)}
                   rows={3}
-                  className="bg-slate-800/60 border-slate-600 text-white text-sm resize-none placeholder:text-slate-500"
+                  className="text-sm resize-none"
                 />
               </div>
               <div className="flex gap-2 pt-1">
                 <Button
-                  variant="outline"
-                  className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700/50"
+                  variant="outline" className="flex-1"
                   onClick={() => setConnectTarget(null)}
                 >
                   Cancel
                 </Button>
                 <Button
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white"
+                  className="flex-1"
                   onClick={sendConnect}
                   disabled={sendingConnect}
                 >
@@ -643,29 +642,29 @@ function MatchPreferencesModal({ open, onClose }: { open: boolean; onClose: () =
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <SlidersHorizontal className="w-5 h-5 text-indigo-400" />
+            <SlidersHorizontal className="w-5 h-5 text-primary" />
             Matching Preferences
           </DialogTitle>
-          <DialogDescription className="text-slate-400">
+          <DialogDescription className="text-muted-foreground">
             Define what you're looking for to get better match suggestions.
           </DialogDescription>
         </DialogHeader>
         {loading ? (
-          <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-indigo-400" /></div>
+          <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
         ) : (
           <div className="space-y-5 pt-2">
             {/* Looking for roles */}
             <div>
-              <Label className="text-slate-300 text-sm mb-2 block">Looking for (roles)</Label>
+              <Label className="text-sm mb-2 block">Looking for (roles)</Label>
               <div className="flex flex-wrap gap-2">
                 {ROLE_OPTIONS.map((r) => (
                   <button
                     key={r}
                     onClick={() => toggle(roles, setRoles, r)}
-                    className={`text-xs px-3 py-1.5 rounded-full border transition-all capitalize ${roles.includes(r) ? "bg-indigo-600 border-indigo-500 text-white" : "bg-slate-800 border-slate-600 text-slate-400 hover:border-slate-400"}`}
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-all capitalize ${roles.includes(r) ? "bg-primary border-primary text-primary-foreground" : "bg-secondary border-border text-muted-foreground hover:border-primary/40"}`}
                   >
                     {r}
                   </button>
@@ -675,13 +674,13 @@ function MatchPreferencesModal({ open, onClose }: { open: boolean; onClose: () =
 
             {/* Desired skills */}
             <div>
-              <Label className="text-slate-300 text-sm mb-2 block">Desired skills in co-founder</Label>
+              <Label className="text-sm mb-2 block">Desired skills in co-founder</Label>
               <div className="flex flex-wrap gap-2">
                 {SKILL_OPTIONS.map((s) => (
                   <button
                     key={s}
                     onClick={() => toggle(skills, setSkills, s)}
-                    className={`text-xs px-3 py-1.5 rounded-full border transition-all ${skills.includes(s) ? "bg-indigo-600 border-indigo-500 text-white" : "bg-slate-800 border-slate-600 text-slate-400 hover:border-slate-400"}`}
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-all ${skills.includes(s) ? "bg-primary border-primary text-primary-foreground" : "bg-secondary border-border text-muted-foreground hover:border-primary/40"}`}
                   >
                     {s}
                   </button>
@@ -691,13 +690,13 @@ function MatchPreferencesModal({ open, onClose }: { open: boolean; onClose: () =
 
             {/* Industries */}
             <div>
-              <Label className="text-slate-300 text-sm mb-2 block">Preferred industries</Label>
+              <Label className="text-sm mb-2 block">Preferred industries</Label>
               <div className="flex flex-wrap gap-2">
                 {INDUSTRY_OPTIONS.map((i) => (
                   <button
                     key={i}
                     onClick={() => toggle(industries, setIndustries, i)}
-                    className={`text-xs px-3 py-1.5 rounded-full border transition-all ${industries.includes(i) ? "bg-indigo-600 border-indigo-500 text-white" : "bg-slate-800 border-slate-600 text-slate-400 hover:border-slate-400"}`}
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-all ${industries.includes(i) ? "bg-primary border-primary text-primary-foreground" : "bg-secondary border-border text-muted-foreground hover:border-primary/40"}`}
                   >
                     {i}
                   </button>
@@ -708,9 +707,9 @@ function MatchPreferencesModal({ open, onClose }: { open: boolean; onClose: () =
             {/* Stage & Commitment */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-slate-300 text-sm mb-1.5 block">Preferred stage</Label>
+                <Label className="text-sm mb-1.5 block">Preferred stage</Label>
                 <Select value={stage || "any"} onValueChange={(v) => setStage(v === "any" ? "" : v)}>
-                  <SelectTrigger className="bg-slate-800/60 border-slate-600 text-slate-300">
+                  <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -724,9 +723,9 @@ function MatchPreferencesModal({ open, onClose }: { open: boolean; onClose: () =
                 </Select>
               </div>
               <div>
-                <Label className="text-slate-300 text-sm mb-1.5 block">Commitment</Label>
+                <Label className="text-sm mb-1.5 block">Commitment</Label>
                 <Select value={commitment || "any"} onValueChange={(v) => setCommitment(v === "any" ? "" : v)}>
-                  <SelectTrigger className="bg-slate-800/60 border-slate-600 text-slate-300">
+                  <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -742,9 +741,9 @@ function MatchPreferencesModal({ open, onClose }: { open: boolean; onClose: () =
             {/* Location & Geo */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-slate-300 text-sm mb-1.5 block">Work location</Label>
+                <Label className="text-sm mb-1.5 block">Work location</Label>
                 <Select value={location} onValueChange={setLocation}>
-                  <SelectTrigger className="bg-slate-800/60 border-slate-600 text-slate-300">
+                  <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -755,9 +754,9 @@ function MatchPreferencesModal({ open, onClose }: { open: boolean; onClose: () =
                 </Select>
               </div>
               <div>
-                <Label className="text-slate-300 text-sm mb-1.5 block">Geographic openness</Label>
+                <Label className="text-sm mb-1.5 block">Geographic openness</Label>
                 <Select value={geo} onValueChange={setGeo}>
-                  <SelectTrigger className="bg-slate-800/60 border-slate-600 text-slate-300">
+                  <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -771,9 +770,9 @@ function MatchPreferencesModal({ open, onClose }: { open: boolean; onClose: () =
 
             {/* Work style */}
             <div>
-              <Label className="text-slate-300 text-sm mb-1.5 block">Work style preference</Label>
+              <Label className="text-sm mb-1.5 block">Work style preference</Label>
               <Select value={workStyle || "any"} onValueChange={(v) => setWorkStyle(v === "any" ? "" : v)}>
-                <SelectTrigger className="bg-slate-800/60 border-slate-600 text-slate-300">
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -787,10 +786,10 @@ function MatchPreferencesModal({ open, onClose }: { open: boolean; onClose: () =
             </div>
 
             <div className="flex gap-2 pt-1">
-              <Button variant="outline" className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700/50" onClick={onClose}>
+              <Button variant="outline" className="flex-1" onClick={onClose}>
                 Cancel
               </Button>
-              <Button className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white" onClick={save} disabled={saving}>
+              <Button className="flex-1" onClick={save} disabled={saving}>
                 {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 Save Preferences
               </Button>

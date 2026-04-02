@@ -133,7 +133,7 @@ export default function LearningPage() {
 
   return (
     <AppLayout title="Learning">
-      <div className="p-6 space-y-6">
+      <div className="px-2 py-3 space-y-5">
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[

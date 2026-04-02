@@ -232,7 +232,7 @@ export default function MatchDetailPage() {
 
   if (notFound || !match) return (
     <AppLayout title="Match Detail">
-      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+      <div className="px-2 py-4">
         <MatchNotFound />
       </div>
     </AppLayout>
@@ -244,7 +244,7 @@ export default function MatchDetailPage() {
 
   return (
     <AppLayout title="Match Detail">
-      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+      <div className="px-2 py-4">
         {/* Back */}
         <Link
           to="/matches"

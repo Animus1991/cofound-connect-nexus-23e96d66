@@ -173,7 +173,7 @@ export default function AdminDashboardPage() {
 
   return (
     <AppLayout title="Admin Dashboard">
-      <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto">
+      <div className="px-2 py-3 space-y-5">
         {/* Section Nav */}
         <div className="flex gap-1 overflow-x-auto border-b border-border/50 pb-px">
           {sections.map(s => (

@@ -110,7 +110,7 @@ export default function CommunitiesPage() {
 
   return (
     <AppLayout title="Communities" headerActions={<Button variant="default" size="sm" className="gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" /> Create</Button>}>
-      <div className="p-4 sm:p-6 space-y-5 max-w-[1400px] mx-auto">
+      <div className="px-2 py-3 space-y-4">
         {/* Trending */}
         {!isLoading && (
           <motion.div {...fade(0)}>

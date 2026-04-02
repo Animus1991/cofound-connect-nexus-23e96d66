@@ -336,7 +336,7 @@ export default function OpportunitiesPage() {
         </Button>
       }
     >
-      <div className="p-4 sm:p-6">
+      <div className="px-2 py-3">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="listings" className="gap-1.5">

@@ -166,7 +166,7 @@ export default function PublicProfilePage() {
 
   return (
     <AppLayout title={profile.name ?? "Profile"}>
-      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+      <div className="px-2 py-4">
         {/* Back */}
         <button
           onClick={() => navigate(-1)}

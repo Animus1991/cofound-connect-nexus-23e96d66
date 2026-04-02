@@ -303,7 +303,7 @@ export default function ProfilePage() {
         )
       }
     >
-      <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
+      <div className="px-2 py-3 space-y-5">
         {/* Profile Header */}
         <motion.div {...stagger(0)} className="rounded-2xl border border-border/50 bg-card p-6 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-2xl" />

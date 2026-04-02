@@ -158,7 +158,7 @@ export default function SettingsPage() {
 
   return (
     <AppLayout title="Settings">
-      <div className="p-6 max-w-4xl">
+      <div className="px-2 py-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6 flex-wrap h-auto">
             <TabsTrigger value="account" className="gap-1.5"><User className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Account</span><span className="sm:hidden">Acct</span></TabsTrigger>

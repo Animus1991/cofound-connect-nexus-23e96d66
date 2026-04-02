@@ -52,46 +52,47 @@
   }
 
   .light {
-    --background: 210 20% 98%;
-    --foreground: 222 35% 14%;
+    --background: 210 20% 97%;
+    --foreground: 222 40% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 35% 14%;
+    --card-foreground: 222 40% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 35% 14%;
+    --popover-foreground: 222 40% 10%;
 
-    --primary: 174 72% 30%;
+    --primary: 174 72% 28%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 16% 93%;
-    --secondary-foreground: 222 20% 30%;
+    --secondary: 210 16% 92%;
+    --secondary-foreground: 222 25% 22%;
 
+    /* muted-foreground raised to 38% lightness → ~5:1 contrast on white, WCAG AA */
     --muted: 210 16% 93%;
-    --muted-foreground: 215 12% 50%;
+    --muted-foreground: 215 16% 38%;
 
-    --accent: 38 85% 52%;
+    --accent: 38 85% 44%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 55%;
+    --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 16% 89%;
-    --input: 214 16% 89%;
-    --ring: 174 72% 30%;
+    --border: 214 16% 84%;
+    --input: 214 16% 84%;
+    --ring: 174 72% 28%;
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 35% 14%;
-    --sidebar-primary: 174 72% 30%;
+    --sidebar-background: 0 0% 99%;
+    --sidebar-foreground: 222 35% 12%;
+    --sidebar-primary: 174 72% 28%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 16% 95%;
-    --sidebar-accent-foreground: 222 20% 30%;
-    --sidebar-border: 214 16% 89%;
-    --sidebar-ring: 174 72% 30%;
+    --sidebar-accent: 210 16% 93%;
+    --sidebar-accent-foreground: 222 25% 18%;
+    --sidebar-border: 214 16% 86%;
+    --sidebar-ring: 174 72% 28%;
 
-    --shadow-subtle: 0 1px 3px hsl(222 20% 50% / 0.06);
-    --shadow-card: 0 2px 8px hsl(222 20% 50% / 0.06);
-    --shadow-elevated: 0 4px 16px hsl(222 20% 50% / 0.08);
+    --shadow-subtle: 0 1px 3px hsl(222 20% 40% / 0.08);
+    --shadow-card: 0 2px 8px hsl(222 20% 40% / 0.08);
+    --shadow-elevated: 0 4px 16px hsl(222 20% 40% / 0.10);
   }
 }
 
@@ -111,20 +112,27 @@
 }
 
 @layer utilities {
-  /* Simplified shadow utilities */
-  .shadow-subtle {
-    box-shadow: var(--shadow-subtle);
+  /* ── Shadows ── */
+  .shadow-subtle  { box-shadow: var(--shadow-subtle); }
+  .shadow-card    { box-shadow: var(--shadow-card); }
+  .shadow-elevated{ box-shadow: var(--shadow-elevated); }
+
+  /* ── Card backgrounds ── */
+  .bg-card-gradient {
+    background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card) / 0.92) 100%);
   }
 
-  .shadow-card {
-    box-shadow: var(--shadow-card);
+  /* ── Hover lift for interactive cards ── */
+  .hover-lift {
+    @apply transition-all duration-200 cursor-pointer;
+  }
+  .hover-lift:hover {
+    transform: translateY(-1px);
+    border-color: hsl(var(--primary) / 0.2);
+    box-shadow: 0 4px 16px hsl(var(--primary) / 0.08);
   }
 
-  .shadow-elevated {
-    box-shadow: var(--shadow-elevated);
-  }
-
-  /* Single hover utility for interactive cards */
+  /* ── Interactive card (border-only hover) ── */
   .interactive-card {
     @apply transition-all duration-200;
   }
@@ -133,14 +141,40 @@
     box-shadow: 0 2px 12px hsl(var(--primary) / 0.06);
   }
 
-  /* Glass effect */
+  /* ── Text gradient ── */
+  .text-gradient-primary {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Glass effect ── */
   .glass {
     @apply bg-background/80 backdrop-blur-lg border border-border/50;
   }
 
-  /* Focus ring */
+  /* ── Focus ring ── */
   .focus-ring {
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  /* ── Page-level container shorthand ── */
+  .page-content {
+    @apply px-2 py-3;
+  }
+}
+
+/* ── Light mode: card border distinction ── */
+.light .rounded-2xl.border,
+.light .rounded-xl.border {
+  border-color: hsl(var(--border));
+}
+
+/* ── Smooth sidebar transition for main content ── */
+@media (prefers-reduced-motion: no-preference) {
+  [style*="margin-left"] {
+    transition: margin-left 200ms ease-out;
   }
 }
 

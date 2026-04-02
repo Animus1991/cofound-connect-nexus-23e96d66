@@ -188,7 +188,7 @@ export default function StartupPage() {
 
   return (
     <AppLayout title="Startup Profile">
-      <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
+      <div className="px-2 py-4">
 
         {/* Header */}
         <div className="mb-6 flex items-start justify-between gap-4">

@@ -79,7 +79,7 @@ export default function CommunityDetailPage() {
 
   return (
     <AppLayout title={community.title}>
-      <div className="p-4 sm:p-6 space-y-6">
+      <div className="px-2 py-3 space-y-5">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-primary/20 bg-card-gradient p-6">
           <Link to="/communities" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-4">
