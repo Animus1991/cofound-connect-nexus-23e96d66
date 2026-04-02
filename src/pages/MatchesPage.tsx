@@ -50,13 +50,12 @@ interface MatchItem {
   name: string;
   headline: string | null;
   location: string | null;
+  role: string | null;
   stage: string | null;
   commitment: string | null;
   skills: string[];
-  interests: string[];
   score: number;
   dimensions: Record<string, number>;
-  explanation: string;
   sharedStrengths: string[];
   complementaryStrengths: string[];
   mismatches: string[];
