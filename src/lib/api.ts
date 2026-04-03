@@ -401,6 +401,81 @@ export const api = {
         body: JSON.stringify(body),
       }),
   },
+
+  matching: {
+    getRecommendations: (params?: { limit?: number; matchType?: string }) => {
+      const q = new URLSearchParams();
+      if (params?.limit) q.set("limit", String(params.limit));
+      if (params?.matchType) q.set("matchType", params.matchType);
+      const qs = q.toString();
+      return request<{
+        model: { version: string; stage: string; weights: { explicitWeight: number; semanticWeight: number; behavioralWeight: number; outcomeWeight: number; explorationRate: number } };
+        recommendations: Array<{
+          userId: string;
+          name: string;
+          headline: string | null;
+          location: string | null;
+          stage: string | null;
+          commitment: string | null;
+          skills: string[];
+          score: number;
+          breakdown: {
+            explicitScore: number;
+            semanticScore: number;
+            behavioralScore: number;
+            outcomePriorScore: number;
+            finalScore: number;
+            confidenceScore: number;
+            sharedDimensions: string[];
+            complementaryDimensions: string[];
+            frictionDimensions: string[];
+            recommendationReason: string;
+            isNewUserBoost: boolean;
+            isExplorationMatch: boolean;
+          };
+        }>;
+      }>(`/api/matching/recommendations${qs ? `?${qs}` : ""}`);
+    },
+
+    sendFeedback: (body: { targetUserId: string; feedbackType: "not_relevant" | "not_now" | "better_fit" | "relevant" | "hidden" | "reported"; feedbackReason?: string; matchType?: string }) =>
+      request<{ ok: boolean }>("/api/matching/feedback", { method: "POST", body: JSON.stringify(body) }),
+
+    markShown: (body: { targetUserId: string; matchScoreId?: string; modelVersion?: string }) =>
+      request<{ ok: boolean }>("/api/matching/events/shown", { method: "POST", body: JSON.stringify(body) }),
+
+    markClicked: (body: { targetUserId: string; matchScoreId?: string; modelVersion?: string }) =>
+      request<{ ok: boolean }>("/api/matching/events/clicked", { method: "POST", body: JSON.stringify(body) }),
+
+    recordOutcome: (body: {
+      targetUserId: string;
+      outcomeType: "accepted" | "rejected" | "conversation_started" | "conversation_sustained" | "requested";
+      matchScoreId?: string;
+      modelVersion?: string;
+      qualityFlag?: string;
+    }) =>
+      request<{ ok: boolean }>("/api/matching/events/outcome", { method: "POST", body: JSON.stringify(body) }),
+
+    admin: {
+      listModelVersions: () =>
+        request<{ versions: Array<{ id: string; version: string; stage: string; description: string | null; weights: string; isActive: boolean; isFallback: boolean; createdAt: string }>; active: { version: string; stage: string; weights: { explicitWeight: number; semanticWeight: number; behavioralWeight: number; outcomeWeight: number; explorationRate: number } } }>("/api/matching/admin/model-versions"),
+      setActiveModelVersion: (body: { version: string }) =>
+        request<{ ok: boolean; active: { version: string; stage: string; weights: { explicitWeight: number; semanticWeight: number; behavioralWeight: number; outcomeWeight: number; explorationRate: number } } }>("/api/matching/admin/model-versions/active", { method: "PUT", body: JSON.stringify(body) }),
+      updateModelWeights: (version: string, body: { weights: { explicitWeight: number; semanticWeight: number; behavioralWeight: number; outcomeWeight: number; explorationRate: number }; description?: string }) =>
+        request<{ modelVersion: Record<string, unknown> }>(`/api/matching/admin/model-versions/${encodeURIComponent(version)}/weights`, { method: "PUT", body: JSON.stringify(body) }),
+      getMetrics: () =>
+        request<{ since7d: string; byModel: Array<Record<string, unknown>>; feedback: Array<Record<string, unknown>>; lastInference: Array<Record<string, unknown>> }>("/api/matching/admin/metrics"),
+      getFairness: () =>
+        request<{ since7d: string; since30d: string; explorationRate: number; newUserBoostRate: number; negativeFeedbackRate: number; totalShown: number; totalScores: number; totalFeedback: number }>("/api/matching/admin/fairness"),
+      listExperiments: () =>
+        request<{ experiments: Array<{ id: string; name: string; description: string | null; strategyA: string; strategyB: string; trafficSplit: number; isActive: boolean; startedAt: string | null; endedAt: string | null; createdAt: string }> }>("/api/matching/admin/experiments"),
+      createExperiment: (body: { name: string; description?: string; strategyA: string; strategyB: string; trafficSplit?: number }) =>
+        request<{ experiment: Record<string, unknown> }>("/api/matching/admin/experiments", { method: "POST", body: JSON.stringify(body) }),
+      toggleExperiment: (id: string) =>
+        request<{ experiment: Record<string, unknown> }>(`/api/matching/admin/experiments/${id}/toggle`, { method: "PUT", body: "{}" }),
+      deleteExperiment: (id: string) =>
+        request<{ ok: boolean }>(`/api/matching/admin/experiments/${id}`, { method: "DELETE" }),
+    },
+  },
   communities: {
     list: (params?: { search?: string; category?: string; access?: string }) => {
       const q = new URLSearchParams();

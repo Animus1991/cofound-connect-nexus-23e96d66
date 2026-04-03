@@ -53,12 +53,14 @@ import {
   CreditCard,
   Globe,
   Zap,
+  Sparkles,
 } from "lucide-react";
 import TenantBrandingPanel from "@/components/admin/TenantBrandingPanel";
 import SSOConfigPanel from "@/components/admin/SSOConfigPanel";
 import BillingAdminPanel from "@/components/admin/BillingAdminPanel";
 import TenantDomainPanel from "@/components/admin/TenantDomainPanel";
 import AutomationDashboard from "@/components/admin/AutomationDashboard";
+import MatchingAdminPanel from "@/components/admin/MatchingAdminPanel";
 import { motion } from "framer-motion";
 
 // Chart data
@@ -162,7 +164,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function AdminDashboardPage() {
-  const [activeSection, setActiveSection] = useState<"overview" | "users" | "moderation" | "taxonomies" | "white-label" | "sso" | "billing" | "domains" | "automation">("overview");
+  const [activeSection, setActiveSection] = useState<"overview" | "users" | "moderation" | "taxonomies" | "white-label" | "sso" | "billing" | "domains" | "automation" | "matching">("overview");
   const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState("all");
 
@@ -182,6 +184,7 @@ export default function AdminDashboardPage() {
     { key: "billing" as const, label: "Billing", icon: CreditCard },
     { key: "domains" as const, label: "Domains", icon: Globe },
     { key: "automation" as const, label: "Automation", icon: Zap },
+    { key: "matching" as const, label: "Matching", icon: Sparkles },
   ];
 
   const stagger = (i: number) => ({ delay: i * 0.06 });
@@ -519,6 +522,23 @@ export default function AdminDashboardPage() {
               </p>
             </div>
             <AutomationDashboard />
+          </motion.div>
+        )}
+
+        {/* Matching */}
+        {activeSection === "matching" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="rounded-xl border border-border bg-card overflow-hidden"
+          >
+            <div className="border-b border-border px-5 py-4">
+              <h3 className="font-display text-base font-semibold text-foreground">AI Matching Oversight</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Monitor matching model versions, metrics, and safely toggle between rule-based and hybrid strategies.
+              </p>
+            </div>
+            <MatchingAdminPanel />
           </motion.div>
         )}
 

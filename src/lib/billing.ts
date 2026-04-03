@@ -69,6 +69,7 @@ export interface FeatureAccess {
   cancelAtPeriodEnd: boolean;
   renewalDate: string | null;
   currentPeriodEnd: string | null;
+  isOnFreePlan?: boolean;
 }
 
 export interface BillingPlan {

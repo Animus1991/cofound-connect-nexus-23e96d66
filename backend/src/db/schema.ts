@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, uniqueIndex, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, uniqueIndex, index } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
 // ── Users ────────────────────────────────────────────────────────────────────
@@ -1512,4 +1512,153 @@ export const notificationPreferences = sqliteTable("notification_preferences", {
 }, (table) => [
   uniqueIndex("idx_notif_pref_user_cat").on(table.userId, table.category),
   index("idx_notif_pref_user").on(table.userId),
+]);
+
+export const matchModelVersions = sqliteTable("match_model_versions", {
+  id:          text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  version:     text("version").notNull().unique(),
+  stage:       text("stage").notNull().default("stage1"),
+  description: text("description"),
+  weights:     text("weights").notNull().default("{}"),
+  isActive:    integer("is_active",   { mode: "boolean" }).notNull().default(false),
+  isFallback:  integer("is_fallback", { mode: "boolean" }).notNull().default(false),
+  createdAt:   text("created_at").notNull().default(sql`(datetime('now'))`),
+});
+
+export const matchScores = sqliteTable("match_scores", {
+  id:               text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  sourceUserId:     text("source_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  targetUserId:     text("target_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  modelVersion:     text("model_version").notNull().default("v1"),
+  matchType:        text("match_type").notNull().default("co-founder"),
+  explicitScore:    real("explicit_score").notNull().default(0),
+  semanticScore:    real("semantic_score").notNull().default(0),
+  behavioralScore:  real("behavioral_score").notNull().default(0),
+  outcomePriorScore:real("outcome_prior_score").notNull().default(0),
+  finalScore:       real("final_score").notNull().default(0),
+  confidenceScore:  real("confidence_score").notNull().default(0.5),
+  sharedDimensions:        text("shared_dimensions").notNull().default("[]"),
+  complementaryDimensions: text("complementary_dims").notNull().default("[]"),
+  frictionDimensions:      text("friction_dims").notNull().default("[]"),
+  recommendationReason:    text("recommendation_reason"),
+  isNewUserBoost:          integer("is_new_user_boost",  { mode: "boolean" }).notNull().default(false),
+  isExplorationMatch:      integer("is_exploration",     { mode: "boolean" }).notNull().default(false),
+  computedAt: text("computed_at").notNull().default(sql`(datetime('now'))`),
+  expiresAt:  text("expires_at"),
+}, (table) => [
+  uniqueIndex("idx_match_scores_pair_type").on(table.sourceUserId, table.targetUserId, table.matchType),
+  index("idx_match_scores_source_score").on(table.sourceUserId, table.finalScore),
+  index("idx_match_scores_target").on(table.targetUserId),
+]);
+
+export const matchFeedback = sqliteTable("match_feedback", {
+  id:             text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  sourceUserId:   text("source_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  targetUserId:   text("target_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  feedbackType:   text("feedback_type").notNull(),
+  feedbackReason: text("feedback_reason"),
+  modelVersion:   text("model_version"),
+  createdAt:      text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index("idx_match_feedback_source").on(table.sourceUserId),
+  index("idx_match_feedback_target").on(table.targetUserId),
+  uniqueIndex("idx_match_feedback_pair").on(table.sourceUserId, table.targetUserId),
+]);
+
+export const userBehaviorSignals = sqliteTable("user_behavior_signals", {
+  id:           text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId:       text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  signalType:   text("signal_type").notNull(),
+  targetUserId: text("target_user_id").references(() => users.id, { onDelete: "set null" }),
+  weight:       real("weight").notNull().default(1.0),
+  metadata:     text("metadata").notNull().default("{}"),
+  createdAt:    text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index("idx_behavior_signals_user_type").on(table.userId, table.signalType),
+  index("idx_behavior_signals_target").on(table.targetUserId),
+]);
+
+export const matchOutcomes = sqliteTable("match_outcomes", {
+  id:                     text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  sourceUserId:           text("source_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  targetUserId:           text("target_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  matchScoreId:           text("match_score_id").references(() => matchScores.id, { onDelete: "set null" }),
+  modelVersion:           text("model_version"),
+  shownAt:                text("shown_at"),
+  clickedAt:              text("clicked_at"),
+  requestedAt:            text("requested_at"),
+  acceptedAt:             text("accepted_at"),
+  rejectedAt:             text("rejected_at"),
+  conversationStartedAt:  text("conversation_started_at"),
+  conversationSustainedAt:text("conversation_sustained_at"),
+  engagementDepth:        integer("engagement_depth").notNull().default(0),
+  qualityFlag:            text("quality_flag"),
+  createdAt:              text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index("idx_match_outcomes_source").on(table.sourceUserId),
+  index("idx_match_outcomes_pair").on(table.sourceUserId, table.targetUserId),
+  index("idx_match_outcomes_model").on(table.modelVersion),
+]);
+
+export const matchExperiments = sqliteTable("match_experiments", {
+  id:           text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name:         text("name").notNull(),
+  description:  text("description"),
+  strategyA:    text("strategy_a").notNull(),
+  strategyB:    text("strategy_b").notNull(),
+  trafficSplit: real("traffic_split").notNull().default(0.5),
+  isActive:     integer("is_active", { mode: "boolean" }).notNull().default(false),
+  startedAt:    text("started_at"),
+  endedAt:      text("ended_at"),
+  metrics:      text("metrics").notNull().default("{}"),
+  createdAt:    text("created_at").notNull().default(sql`(datetime('now'))`),
+});
+
+export const matchFeatureVectors = sqliteTable("match_feature_vectors", {
+  id:           text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  sourceUserId: text("source_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  targetUserId: text("target_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  modelVersion: text("model_version").notNull().default("v1"),
+  featureJson:  text("feature_json").notNull().default("{}"),
+  createdAt:    text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_match_feature_pair").on(table.sourceUserId, table.targetUserId, table.modelVersion),
+  index("idx_match_feature_source").on(table.sourceUserId),
+]);
+
+export const matchEmbeddings = sqliteTable("match_embeddings", {
+  id:           text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId:       text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  modelVersion: text("model_version").notNull().default("embed-v1"),
+  vectorJson:   text("vector_json").notNull().default("[]"),
+  createdAt:    text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_match_embed_user_model").on(table.userId, table.modelVersion),
+]);
+
+export const matchInferenceLogs = sqliteTable("match_inference_logs", {
+  id:           text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  sourceUserId: text("source_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  targetUserId: text("target_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  modelVersion: text("model_version").notNull(),
+  matchType:    text("match_type").notNull().default("co-founder"),
+  scoreId:      text("score_id").references(() => matchScores.id, { onDelete: "set null" }),
+  breakdownJson:text("breakdown_json").notNull().default("{}"),
+  createdAt:    text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index("idx_match_infer_source").on(table.sourceUserId),
+  index("idx_match_infer_model").on(table.modelVersion),
+  index("idx_match_infer_created").on(table.createdAt),
+]);
+
+export const matchEvaluationMetrics = sqliteTable("match_evaluation_metrics", {
+  id:           text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  modelVersion: text("model_version").notNull(),
+  windowStart:  text("window_start").notNull(),
+  windowEnd:    text("window_end").notNull(),
+  metricsJson:  text("metrics_json").notNull().default("{}"),
+  createdAt:    text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index("idx_match_eval_model").on(table.modelVersion),
+  index("idx_match_eval_window").on(table.windowStart, table.windowEnd),
 ]);

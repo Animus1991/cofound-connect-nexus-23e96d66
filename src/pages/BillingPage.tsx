@@ -59,7 +59,7 @@ export default function BillingPage() {
   const [savingContact, setSavingContact] = useState(false);
 
   const reload = useCallback(async () => {
-    if (!token) return;
+    if (!token) { setLoading(false); return; }
     setLoading(true);
     try {
       const [subRes, invRes, pmRes, plansRes, custRes] = await Promise.all([

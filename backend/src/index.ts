@@ -36,6 +36,7 @@ import adminBillingRoutes from "./routes/adminBilling.js";
 import tenantDomainsRoutes from "./routes/tenantDomains.js";
 import publicDomainsRoutes from "./routes/publicDomains.js";
 import automationRoutes from "./routes/automation.js";
+import matchingRoutes from "./routes/matching.js";
 
 const PORT = parseInt(process.env.PORT ?? "3001", 10);
 
@@ -110,6 +111,7 @@ app.route("/api/admin/billing", adminBillingRoutes);
 app.route("/api/tenant-domains", tenantDomainsRoutes);
 app.route("/api/public/domains", publicDomainsRoutes);
 app.route("/api/automation", automationRoutes);
+app.route("/api/matching", matchingRoutes);
 
 // ── 404 fallback ─────────────────────────────────────────────────────────────
 app.notFound((c) => c.json({ error: "Not found" }, 404));
