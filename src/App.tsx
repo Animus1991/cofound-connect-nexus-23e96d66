@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import React, { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,6 +7,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { TenantProvider } from "@/contexts/TenantContext";
+import { useTenant } from "@/contexts/TenantContext";
+import { isGlobalPlatformHost } from "@/lib/domainResolver";
 import { AnimatePresence } from "framer-motion";
 import PageTransition from "@/components/PageTransition";
 import ChatWidget from "@/components/ChatWidget";
@@ -51,6 +53,7 @@ const TenantLandingPage = lazy(() => import("./pages/TenantLandingPage"));
 const SsoCallbackPage = lazy(() => import("./pages/SsoCallbackPage"));
 const PricingPage = lazy(() => import("./pages/PricingPage"));
 const BillingPage = lazy(() => import("./pages/BillingPage"));
+const DomainNotFoundPage = lazy(() => import("./pages/DomainNotFoundPage"));
 
 function PageLoader() {
   return (
@@ -58,6 +61,36 @@ function PageLoader() {
       <Loader2 className="h-8 w-8 animate-spin text-primary" />
     </div>
   );
+}
+
+/**
+ * DomainBootstrap — wraps the router when we are NOT on the global platform host.
+ * If the domain-resolution result indicates no tenant was found, show DomainNotFoundPage.
+ * If we're still loading, show the spinner.
+ */
+function DomainBootstrap({ children }: { children: React.ReactNode }) {
+  const { isLoading, domainResolution } = useTenant();
+
+  // On global platform host (localhost / cofounderbay.com root): pass through
+  if (isGlobalPlatformHost()) return <>{children}</>;
+
+  if (isLoading) return <PageLoader />;
+
+  // Domain resolved but no tenant found → show DomainNotFoundPage
+  const notFound =
+    domainResolution !== null &&
+    !domainResolution.resolved &&
+    "reason" in domainResolution &&
+    domainResolution.reason !== "no-domain";
+  if (notFound) {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <DomainNotFoundPage />
+      </Suspense>
+    );
+  }
+
+  return <>{children}</>;
 }
 
 const queryClient = new QueryClient();
@@ -121,8 +154,10 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-            <AnimatedRoutes />
-            <ChatWidget />
+            <DomainBootstrap>
+              <AnimatedRoutes />
+              <ChatWidget />
+            </DomainBootstrap>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

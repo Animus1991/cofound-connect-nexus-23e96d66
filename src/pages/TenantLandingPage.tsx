@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTenant, type TenantConfig } from "@/contexts/TenantContext";
+import { extractSubdomainLabel } from "@/lib/domainResolver";
 import {
   ArrowRight,
   Users,
@@ -80,12 +81,14 @@ function SocialLink({ href, icon: Icon, label }: { href: string; icon: React.Ele
 export default function TenantLandingPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { activateTenant, tenant: ctxTenant, isLoading } = useTenant();
+  const { activateTenant, tenant: ctxTenant, isLoading, isDomainMapped, domainResolution } = useTenant();
   const [localTenant, setLocalTenant] = useState<TenantConfig | null>(null);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    if (!slug) { setNotFound(true); return; }
+    if (!slug && !isDomainMapped) { setNotFound(true); return; }
+    if (isDomainMapped) return; // Already loaded by domain resolution
+    if (!slug) return;
     activateTenant(slug).then(() => {
       // ctxTenant is updated via context; also keep local copy
     });
@@ -93,10 +96,17 @@ export default function TenantLandingPage() {
 
   // Mirror context tenant into local state so we can render
   useEffect(() => {
-    if (ctxTenant && ctxTenant.slug === slug) {
+    if (ctxTenant && (ctxTenant.slug === slug || isDomainMapped)) {
       setLocalTenant(ctxTenant);
     }
-  }, [ctxTenant, slug]);
+  }, [ctxTenant, slug, isDomainMapped]);
+
+  // When domain-mapped, the context already has the tenant — no need to activate by slug
+  useEffect(() => {
+    if (isDomainMapped && ctxTenant) {
+      setLocalTenant(ctxTenant);
+    }
+  }, [isDomainMapped, ctxTenant]);
 
   if (isLoading) {
     return (
@@ -142,8 +152,29 @@ export default function TenantLandingPage() {
   const platformDesc = content?.platformDescription ?? `${name} is a curated platform for founders, operators, and builders.`;
   const tagline = content?.tagline ?? "Build your network. Build your startup.";
 
+  // ── Domain context ───────────────────────────────────────────────────────
+  const currentHostname = typeof window !== "undefined" ? window.location.hostname : "";
+  const isOnTenantDomain = isDomainMapped || extractSubdomainLabel(currentHostname) === t.slug;
+  const _domainType = domainResolution?.resolved && domainResolution.action === "serve"
+    ? domainResolution.domainType : null;
+  void _domainType; // available for future use
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
+      {/* ── Domain identity banner (shown when served from a mapped domain) ── */}
+      {isOnTenantDomain && (
+        <div className="border-b border-border/50 bg-secondary/30 py-1.5 text-center">
+          <p className="text-[11px] text-muted-foreground">
+            You're visiting
+            <span className="font-medium text-foreground mx-1">{name}</span>
+            on
+            <span className="font-mono text-primary mx-1">{currentHostname}</span>
+            ·
+            <Link to="/" className="ml-1 text-primary hover:underline">CoFounderBay platform</Link>
+          </p>
+        </div>
+      )}
+
       {/* ── Header ── */}
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
@@ -240,6 +271,17 @@ export default function TenantLandingPage() {
         </section>
       )}
 
+      {/* ── About section ── */}
+      {t.aboutText && (
+        <section className="mx-auto max-w-4xl px-4 sm:px-6 py-10">
+          <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="rounded-2xl border border-border/50 bg-card p-6 sm:p-8">
+            <h2 className="font-display text-xl font-bold text-foreground mb-3">About {name}</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{t.aboutText}</p>
+          </motion.div>
+        </section>
+      )}
+
       {/* ── Features grid ── */}
       <section className="mx-auto w-full max-w-6xl px-4 sm:px-6 py-12 pb-20">
         <motion.div
@@ -277,6 +319,34 @@ export default function TenantLandingPage() {
           ))}
         </div>
       </section>
+
+      {/* ── Org-specific contact / help ── */}
+      {(legal?.supportEmail || legal?.supportUrl || legal?.supportPhone) && (
+        <section className="mx-auto max-w-4xl w-full px-4 sm:px-6 pb-10">
+          <motion.div initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="rounded-2xl border border-border/50 bg-card p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 shrink-0">
+              <Mail className="h-4 w-4 text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-foreground">Get in touch with {name}</p>
+              <div className="flex flex-wrap gap-3 mt-1">
+                {legal.supportEmail && (
+                  <a href={`mailto:${legal.supportEmail}`} className="text-xs text-primary hover:underline">{legal.supportEmail}</a>
+                )}
+                {legal.supportPhone && (
+                  <a href={`tel:${legal.supportPhone}`} className="text-xs text-muted-foreground hover:text-foreground">{legal.supportPhone}</a>
+                )}
+                {legal.supportUrl && (
+                  <a href={legal.supportUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-0.5">
+                    Help centre <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        </section>
+      )}
 
       {/* ── CTA banner ── */}
       <section className="mx-auto w-full max-w-6xl px-4 sm:px-6 pb-20">

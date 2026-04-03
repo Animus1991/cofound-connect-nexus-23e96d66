@@ -28,6 +28,7 @@ import {
 import { contrastRatio, hexToHslString } from "@/lib/tenantTheme";
 import { useTenant } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
+import DomainManagementPanel from "@/components/tenant/DomainManagementPanel";
 
 // ── API helper ────────────────────────────────────────────────────────────────
 
@@ -60,6 +61,7 @@ const SECTIONS = [
   { key: "legal", label: "Legal", icon: Scale },
   { key: "email", label: "Email", icon: Mail },
   { key: "social", label: "Social", icon: Share2 },
+  { key: "domains", label: "Domains", icon: Globe },
   { key: "preview", label: "Preview", icon: Eye },
 ] as const;
 
@@ -692,6 +694,14 @@ export default function TenantBrandingPanel({ tenantId }: TenantBrandingPanelPro
               transition={{ duration: 0.2 }}
               className="space-y-5"
             >
+              {/* ── Domains ── */}
+              {section === "domains" && effectiveTenantId && (
+                <div className="space-y-4">
+                  <SectionHeader title="Domain Mapping" desc="Map platform subdomains or custom domains to this tenant." />
+                  <DomainManagementPanel tenantId={effectiveTenantId} />
+                </div>
+              )}
+
               {/* ── Identity ── */}
               {section === "identity" && (
                 <div className="space-y-4">

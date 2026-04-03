@@ -1209,3 +1209,127 @@ export const addOns = sqliteTable("add_ons", {
 }, (table) => [
   uniqueIndex("idx_add_ons_slug").on(table.slug),
 ]);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TENANT DOMAIN MAPPING
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── Tenant Domains ────────────────────────────────────────────────────────
+// Maps a hostname (subdomain or custom domain) to a tenant.
+// One tenant can have multiple domains; exactly one should be isPrimary.
+
+export const tenantDomains = sqliteTable("tenant_domains", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  /**
+   * Fully-qualified domain name, lower-cased.
+   * Examples:
+   *   athens.cofounderbay.com   (platform subdomain)
+   *   founders.example.org      (custom domain)
+   */
+  domainName: text("domain_name").notNull(),
+  /**
+   * subdomain  — platform-managed *.cofounderbay.com subdomain
+   * custom     — externally-owned domain pointed via CNAME/ALIAS
+   */
+  domainType: text("domain_type").notNull().default("custom"),
+  /** True if this is the canonical/primary domain for the tenant */
+  isPrimary: integer("is_primary", { mode: "boolean" }).notNull().default(false),
+  /**
+   * Verification state:
+   *   pending     — newly added, not yet verified
+   *   verified    — DNS verification token confirmed
+   *   failed      — verification attempt failed
+   */
+  verificationStatus: text("verification_status").notNull().default("pending"),
+  /** Random token the tenant must publish as a DNS TXT record */
+  verificationToken: text("verification_token").notNull(),
+  /** ISO timestamp of last verification attempt */
+  lastVerifiedAt: text("last_verified_at"),
+  /**
+   * SSL / TLS status (future use — managed by infrastructure):
+   *   none | provisioning | active | failed | expired
+   */
+  sslStatus: text("ssl_status").notNull().default("none"),
+  /** True when domain is fully active and will serve tenant context */
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(false),
+  /**
+   * redirect_behavior:
+   *   serve    — serve tenant landing on this domain (default)
+   *   redirect — 301 to primary domain instead
+   */
+  redirectBehavior: text("redirect_behavior").notNull().default("serve"),
+  /** Target URL for 'redirect' behavior (e.g. primary domain) */
+  redirectTarget: text("redirect_target"),
+  /** JSON: structured DNS instructions for CNAME/TXT records */
+  dnsInstructions: text("dns_instructions").notNull().default("{}"),
+  /** Admin notes */
+  notes: text("notes"),
+  /** Super-admin who approved / activated this domain */
+  approvedBy: text("approved_by").references(() => users.id, { onDelete: "set null" }),
+  approvedAt: text("approved_at"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_tenant_domains_name").on(table.domainName),
+  index("idx_tenant_domains_tenant").on(table.tenantId),
+  index("idx_tenant_domains_active").on(table.isActive),
+  index("idx_tenant_domains_type").on(table.domainType),
+]);
+
+// ── Domain Verifications ──────────────────────────────────────────────────
+// Immutable audit log of every domain verification attempt.
+
+export const domainVerifications = sqliteTable("domain_verifications", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  domainId: text("domain_id").notNull().references(() => tenantDomains.id, { onDelete: "cascade" }),
+  tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  /**
+   * Method used:
+   *   dns_txt   — TXT record lookup
+   *   dns_cname — CNAME resolution check
+   *   http_file — /.well-known/cofounderbay.txt HTTP probe
+   *   manual    — super-admin manual approval
+   */
+  method: text("method").notNull().default("dns_txt"),
+  /** success | failure | pending */
+  outcome: text("outcome").notNull(),
+  /** IP or hostname resolved during the check */
+  resolvedValue: text("resolved_value"),
+  /** Human-readable error message on failure */
+  errorMessage: text("error_message"),
+  /** Actor: system | admin */
+  actor: text("actor").notNull().default("system"),
+  actorId: text("actor_id"),
+  /** JSON: raw DNS response or HTTP probe metadata */
+  metadata: text("metadata").notNull().default("{}"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index("idx_domain_verif_domain").on(table.domainId),
+  index("idx_domain_verif_tenant").on(table.tenantId),
+  index("idx_domain_verif_created").on(table.createdAt),
+]);
+
+// ── Domain Routing Rules ──────────────────────────────────────────────────
+// Optional per-domain overrides: custom landing path, access gating, etc.
+
+export const domainRoutingRules = sqliteTable("domain_routing_rules", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  domainId: text("domain_id").notNull().references(() => tenantDomains.id, { onDelete: "cascade" }),
+  tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  /**
+   * landing_path   — custom frontend path to render on root visit (default: /t/:slug)
+   * auth_mode      — open | invite_only | sso_required | disabled
+   * feature_preset — preset feature-flag profile to apply for this domain
+   */
+  ruleType: text("rule_type").notNull(),
+  ruleValue: text("rule_value").notNull(),
+  /** JSON: additional rule-specific config */
+  config: text("config").notNull().default("{}"),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index("idx_domain_rules_domain").on(table.domainId),
+  index("idx_domain_rules_tenant").on(table.tenantId),
+]);

@@ -15,6 +15,11 @@ import {
   setFavicon,
 } from "@/lib/tenantTheme";
 import { useTheme } from "@/components/ThemeProvider";
+import {
+  resolveDomain,
+  isGlobalPlatformHost,
+  type DomainResolutionResult,
+} from "@/lib/domainResolver";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -110,6 +115,14 @@ interface TenantContextValue {
   isLoading: boolean;
   /** True if the active tenant has branding published and active. */
   isBrandingActive: boolean;
+  /**
+   * True if the app was loaded from a tenant-mapped domain
+   * (subdomain or custom domain). In this case deactivateTenant() is blocked
+   * and the global nav is suppressed in favour of the tenant context.
+   */
+  isDomainMapped: boolean;
+  /** The raw domain resolution result from boot-time domain detection. */
+  domainResolution: DomainResolutionResult | null;
   /** Programmatically activate a tenant by slug (e.g. from /t/:slug route). */
   activateTenant: (slug: string) => Promise<void>;
   /** Deactivate the current tenant branding and restore defaults. */
@@ -132,6 +145,8 @@ const defaultValue: TenantContextValue = {
   tenant: null,
   isLoading: false,
   isBrandingActive: false,
+  isDomainMapped: false,
+  domainResolution: null,
   activateTenant: async () => {},
   deactivateTenant: () => {},
   label: (_key, fallback) => fallback,
@@ -179,7 +194,10 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const { theme } = useTheme();
   const [tenant, setTenant] = useState<TenantConfig | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDomainMapped, setIsDomainMapped] = useState(false);
+  const [domainResolution, setDomainResolution] = useState<DomainResolutionResult | null>(null);
   const activeSlugRef = useRef<string | null>(null);
+  const domainInitializedRef = useRef(false);
 
   const applyBranding = useCallback((cfg: TenantConfig, currentTheme: "dark" | "light") => {
     if (!cfg.isBrandingActive || !cfg.branding) {
@@ -252,12 +270,75 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     if (tenant) applyBranding(tenant, theme);
   }, [theme, tenant, applyBranding]);
 
-  // Restore persisted tenant slug on mount
+  // ── Domain-aware boot sequence ────────────────────────────────────────
+  // Priority: domain mapping > persisted slug
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(TENANT_SLUG_KEY);
-      if (stored) activateTenant(stored);
-    } catch {}
+    if (domainInitializedRef.current) return;
+    domainInitializedRef.current = true;
+
+    async function boot() {
+      // 1. If running on global platform host (localhost, cofounderbay.com root)
+      //    fall back to persisted slug only.
+      if (isGlobalPlatformHost()) {
+        try {
+          const stored = localStorage.getItem(TENANT_SLUG_KEY);
+          if (stored) await activateTenant(stored);
+        } catch {}
+        return;
+      }
+
+      // 2. Resolve current domain against the API
+      setIsLoading(true);
+      try {
+        const result = await resolveDomain();
+        setDomainResolution(result);
+
+        if (result.resolved && result.action === "redirect" && result.redirectTo) {
+          window.location.replace(result.redirectTo);
+          return;
+        }
+
+        if (result.resolved && result.action === "serve") {
+          const slug = result.tenant.slug;
+          if (slug) {
+            setIsDomainMapped(true);
+            // Directly set tenant from domain resolution payload (avoid second API call)
+            const cfg: TenantConfig = {
+              id: result.tenant.id,
+              slug,
+              displayName: result.tenant.displayName ?? slug,
+              description: result.tenant.description,
+              aboutText: result.tenant.aboutText,
+              isBrandingActive: result.tenant.isBrandingActive,
+              publishedAt: result.tenant.publishedAt,
+              organization: null,
+              branding: result.branding as TenantBrandingConfig | null,
+              content: result.content as TenantContentConfig | null,
+              legal: result.legal as TenantLegalConfig | null,
+              email: result.email as TenantEmailConfig | null,
+              social: result.social as TenantSocialConfig | null,
+            };
+            activeSlugRef.current = slug;
+            setTenant(cfg);
+            applyBranding(cfg, theme);
+            // Update document title and meta description for SEO
+            if (cfg.displayName) {
+              document.title = cfg.displayName;
+            }
+            if (cfg.description) {
+              const meta = document.querySelector('meta[name="description"]');
+              if (meta) meta.setAttribute("content", cfg.description);
+            }
+          }
+        }
+      } catch {
+        // Silently fall back to global platform context
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    void boot();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -274,7 +355,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
   return (
     <TenantContext.Provider
-      value={{ tenant, isLoading, isBrandingActive, activateTenant, deactivateTenant, label, refreshTenant }}
+      value={{ tenant, isLoading, isBrandingActive, isDomainMapped, domainResolution, activateTenant, deactivateTenant, label, refreshTenant }}
     >
       {children}
     </TenantContext.Provider>

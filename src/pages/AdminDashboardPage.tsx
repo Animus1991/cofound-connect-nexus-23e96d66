@@ -51,10 +51,12 @@ import {
   Palette,
   ShieldCheck,
   CreditCard,
+  Globe,
 } from "lucide-react";
 import TenantBrandingPanel from "@/components/admin/TenantBrandingPanel";
 import SSOConfigPanel from "@/components/admin/SSOConfigPanel";
 import BillingAdminPanel from "@/components/admin/BillingAdminPanel";
+import TenantDomainPanel from "@/components/admin/TenantDomainPanel";
 import { motion } from "framer-motion";
 
 // Chart data
@@ -158,7 +160,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function AdminDashboardPage() {
-  const [activeSection, setActiveSection] = useState<"overview" | "users" | "moderation" | "taxonomies" | "white-label" | "sso" | "billing">("overview");
+  const [activeSection, setActiveSection] = useState<"overview" | "users" | "moderation" | "taxonomies" | "white-label" | "sso" | "billing" | "domains">("overview");
   const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState("all");
 
@@ -176,6 +178,7 @@ export default function AdminDashboardPage() {
     { key: "white-label" as const, label: "White-Label", icon: Palette },
     { key: "sso" as const, label: "Enterprise SSO", icon: ShieldCheck },
     { key: "billing" as const, label: "Billing", icon: CreditCard },
+    { key: "domains" as const, label: "Domains", icon: Globe },
   ];
 
   const stagger = (i: number) => ({ delay: i * 0.06 });
@@ -483,6 +486,21 @@ export default function AdminDashboardPage() {
         {activeSection === "white-label" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
             <TenantBrandingPanel />
+          </motion.div>
+        )}
+
+        {/* Domain Mapping */}
+        {activeSection === "domains" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="rounded-xl border border-border bg-card overflow-hidden"
+          >
+            <div className="border-b border-border px-5 py-4">
+              <h3 className="font-display text-base font-semibold text-foreground">Tenant Domain Mapping</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Manage subdomain and custom domain mappings, verify ownership, activate domains, and configure routing rules.
+              </p>
+            </div>
+            <TenantDomainPanel />
           </motion.div>
         )}
 
