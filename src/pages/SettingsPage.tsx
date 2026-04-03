@@ -28,17 +28,9 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import NotificationPreferencesPanel from "@/components/user/NotificationPreferencesPanel";
 
 // ── Types ──────────────────────────────────────────────────
-interface NotificationSetting {
-  id: string;
-  label: string;
-  description: string;
-  email: boolean;
-  push: boolean;
-  inApp: boolean;
-}
-
 interface ConnectedAccount {
   id: string;
   name: string;
@@ -92,16 +84,6 @@ export default function SettingsPage() {
     timezone: "Europe/Athens",
   });
 
-  // Notifications
-  const [notifications, setNotifications] = useState<NotificationSetting[]>([
-    { id: "n1", label: "New Messages", description: "When someone sends you a direct message.", email: true, push: true, inApp: true },
-    { id: "n2", label: "Intro Requests", description: "When someone wants to connect with you.", email: true, push: true, inApp: true },
-    { id: "n3", label: "Opportunity Matches", description: "When a new opportunity matches your profile.", email: true, push: false, inApp: true },
-    { id: "n4", label: "Mentor Sessions", description: "Reminders for upcoming mentor sessions.", email: true, push: true, inApp: true },
-    { id: "n5", label: "Weekly Digest", description: "A weekly summary of activity on your profile.", email: true, push: false, inApp: false },
-    { id: "n6", label: "Product Updates", description: "News about CoFounder Connect features and improvements.", email: false, push: false, inApp: true },
-  ]);
-
   // Privacy
   const [privacy, setPrivacy] = useState({
     profileVisibility: "public" as "public" | "connections" | "private",
@@ -120,12 +102,6 @@ export default function SettingsPage() {
     { id: "a4", name: "Twitter / X", icon: "🐦", connected: false },
   ]);
 
-  const toggleNotification = (id: string, channel: "email" | "push" | "inApp") => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, [channel]: !n[channel] } : n))
-    );
-  };
-
   const toggleAccount = (id: string) => {
     setAccounts((prev) =>
       prev.map((a) =>
@@ -139,13 +115,11 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const notifMap: Record<string, { email: boolean; push: boolean; inApp: boolean }> = {};
-      notifications.forEach((n) => { notifMap[n.id] = { email: n.email, push: n.push, inApp: n.inApp }; });
       await api.settings.updateMe({
         name: accountData.name,
         language: accountData.language as "en" | "el" | "es" | "fr",
         timezone: accountData.timezone,
-        notifications: notifMap,
+        notifications: {},
         privacy,
       });
       toast({ title: "Settings saved", description: "Your preferences have been updated." });
@@ -277,41 +251,13 @@ export default function SettingsPage() {
           </>)}
 
           {/* Notifications */}
-          {activeTab === "notifications" && (<>
+          {activeTab === "notifications" && (
             <Card className="border-border/50">
-              <CardHeader>
-                <CardTitle className="text-lg">Notification Preferences</CardTitle>
-                <CardDescription>Choose how and when you want to be notified.</CardDescription>
-              </CardHeader>
-              <CardContent>
-              {/* Header row */}
-                <div className="hidden sm:grid grid-cols-[1fr_60px_60px_60px] gap-2 mb-3 px-1">
-                  <span />
-                  <span className="text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1"><Mail className="h-3 w-3" /> Email</span>
-                  <span className="text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1"><Smartphone className="h-3 w-3" /> Push</span>
-                  <span className="text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1"><Bell className="h-3 w-3" /> In-App</span>
-                </div>
-                <div className="space-y-1">
-                  {notifications.map((n) => (
-                    <div key={n.id} className="flex flex-col sm:grid sm:grid-cols-[1fr_60px_60px_60px] gap-2 sm:items-center rounded-lg px-1 py-3 hover:bg-secondary/30 transition-colors">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{n.label}</p>
-                        <p className="text-xs text-muted-foreground">{n.description}</p>
-                      </div>
-                      <div className="flex gap-4 sm:contents">
-                        <label className="flex items-center gap-1.5 sm:justify-center text-[10px] text-muted-foreground sm:text-[0px]"><Switch checked={n.email} onCheckedChange={() => toggleNotification(n.id, "email")} /><span className="sm:hidden">Email</span></label>
-                        <label className="flex items-center gap-1.5 sm:justify-center text-[10px] text-muted-foreground sm:text-[0px]"><Switch checked={n.push} onCheckedChange={() => toggleNotification(n.id, "push")} /><span className="sm:hidden">Push</span></label>
-                        <label className="flex items-center gap-1.5 sm:justify-center text-[10px] text-muted-foreground sm:text-[0px]"><Switch checked={n.inApp} onCheckedChange={() => toggleNotification(n.id, "inApp")} /><span className="sm:hidden">In-App</span></label>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <CardContent className="pt-6">
+                <NotificationPreferencesPanel />
               </CardContent>
             </Card>
-            <div className="mt-4 flex justify-end">
-              <Button variant="hero" onClick={handleSave} disabled={isSaving}>Save Changes</Button>
-            </div>
-          </>)}
+          )}
 
           {/* Privacy */}
           {activeTab === "privacy" && (<>

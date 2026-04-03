@@ -19,6 +19,7 @@ import {
   Loader2,
   Save,
   Globe,
+  CreditCard,
   ExternalLink,
   Rocket,
   RefreshCcw,
@@ -29,6 +30,7 @@ import { contrastRatio, hexToHslString } from "@/lib/tenantTheme";
 import { useTenant } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import DomainManagementPanel from "@/components/tenant/DomainManagementPanel";
+import TenantBillingPanel from "@/components/billing/TenantBillingPanel";
 
 // ── API helper ────────────────────────────────────────────────────────────────
 
@@ -62,6 +64,7 @@ const SECTIONS = [
   { key: "email", label: "Email", icon: Mail },
   { key: "social", label: "Social", icon: Share2 },
   { key: "domains", label: "Domains", icon: Globe },
+  { key: "billing", label: "Billing", icon: CreditCard },
   { key: "preview", label: "Preview", icon: Eye },
 ] as const;
 
@@ -694,6 +697,14 @@ export default function TenantBrandingPanel({ tenantId }: TenantBrandingPanelPro
               transition={{ duration: 0.2 }}
               className="space-y-5"
             >
+              {/* ── Billing ── */}
+              {section === "billing" && effectiveTenantId && (
+                <div className="space-y-4">
+                  <SectionHeader title="Billing & Subscription" desc="Manage this tenant's subscription plan, seats, invoices, and billing contact." />
+                  <TenantBillingPanel tenantId={effectiveTenantId} tenantName={form.identity.displayName} />
+                </div>
+              )}
+
               {/* ── Domains ── */}
               {section === "domains" && effectiveTenantId && (
                 <div className="space-y-4">

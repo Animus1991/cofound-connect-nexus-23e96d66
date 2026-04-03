@@ -28,6 +28,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Bookmark,
+  CreditCard,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -246,10 +247,11 @@ export default function AppLayout({ title, children, headerActions }: AppLayoutP
             {showLabels && <span className="flex-1 whitespace-nowrap text-sm">Profile</span>}
           </Link>
 
-          <NavLink to="/startup"       icon={Rocket}  label="Startup" />
-          <NavLink to="/notifications" icon={Bell}    label="Notifications" badge={unreadCount} />
-          <NavLink to="/admin"         icon={Shield}  label="Admin" />
-          <NavLink to="/settings"      icon={Settings} label="Settings" />
+          <NavLink to="/startup"       icon={Rocket}      label="Startup" />
+          <NavLink to="/billing"        icon={CreditCard}  label="Billing" />
+          <NavLink to="/notifications"  icon={Bell}        label="Notifications" badge={unreadCount} />
+          <NavLink to="/admin"          icon={Shield}      label="Admin" />
+          <NavLink to="/settings"       icon={Settings}    label="Settings" />
 
           {/* Log out */}
           <button

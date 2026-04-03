@@ -52,11 +52,13 @@ import {
   ShieldCheck,
   CreditCard,
   Globe,
+  Zap,
 } from "lucide-react";
 import TenantBrandingPanel from "@/components/admin/TenantBrandingPanel";
 import SSOConfigPanel from "@/components/admin/SSOConfigPanel";
 import BillingAdminPanel from "@/components/admin/BillingAdminPanel";
 import TenantDomainPanel from "@/components/admin/TenantDomainPanel";
+import AutomationDashboard from "@/components/admin/AutomationDashboard";
 import { motion } from "framer-motion";
 
 // Chart data
@@ -160,7 +162,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function AdminDashboardPage() {
-  const [activeSection, setActiveSection] = useState<"overview" | "users" | "moderation" | "taxonomies" | "white-label" | "sso" | "billing" | "domains">("overview");
+  const [activeSection, setActiveSection] = useState<"overview" | "users" | "moderation" | "taxonomies" | "white-label" | "sso" | "billing" | "domains" | "automation">("overview");
   const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState("all");
 
@@ -179,6 +181,7 @@ export default function AdminDashboardPage() {
     { key: "sso" as const, label: "Enterprise SSO", icon: ShieldCheck },
     { key: "billing" as const, label: "Billing", icon: CreditCard },
     { key: "domains" as const, label: "Domains", icon: Globe },
+    { key: "automation" as const, label: "Automation", icon: Zap },
   ];
 
   const stagger = (i: number) => ({ delay: i * 0.06 });
@@ -501,6 +504,21 @@ export default function AdminDashboardPage() {
               </p>
             </div>
             <TenantDomainPanel />
+          </motion.div>
+        )}
+
+        {/* Automation */}
+        {activeSection === "automation" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="rounded-xl border border-border bg-card overflow-hidden"
+          >
+            <div className="border-b border-border px-5 py-4">
+              <h3 className="font-display text-base font-semibold text-foreground">Automation Framework</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Manage event-driven automation rules, view execution history, inspect logs, and configure notification templates.
+              </p>
+            </div>
+            <AutomationDashboard />
           </motion.div>
         )}
 

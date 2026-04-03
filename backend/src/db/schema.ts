@@ -1333,3 +1333,183 @@ export const domainRoutingRules = sqliteTable("domain_routing_rules", {
   index("idx_domain_rules_domain").on(table.domainId),
   index("idx_domain_rules_tenant").on(table.tenantId),
 ]);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUTOMATION FRAMEWORK
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * automation_rules — core workflow definitions.
+ *
+ * trigger_type  — see TriggerType enum in automationEngine.ts
+ * entity_scope  — 'user' | 'tenant' | 'connection' | 'mentor' | 'community' |
+ *                 'billing' | 'admin' | 'global'
+ * condition_definition — JSON array of AutomationCondition objects
+ * action_definition    — JSON array of AutomationAction objects
+ * schedule_delay       — delay in minutes before executing the action (0 = immediate)
+ * priority             — lower number = higher priority (1 = highest)
+ */
+export const automationRules = sqliteTable("automation_rules", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  description: text("description"),
+  /** Nullable = global rule; set = tenant-specific */
+  tenantId: text("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
+  triggerType: text("trigger_type").notNull(),
+  entityScope: text("entity_scope").notNull().default("global"),
+  /** JSON: AutomationCondition[] */
+  conditionDefinition: text("condition_definition").notNull().default("[]"),
+  /** JSON: AutomationAction[] */
+  actionDefinition: text("action_definition").notNull().default("[]"),
+  /** Minutes to wait before executing — 0 = immediate */
+  scheduleDelay: integer("schedule_delay").notNull().default(0),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  /** 1 = highest priority */
+  priority: integer("priority").notNull().default(50),
+  failureCount: integer("failure_count").notNull().default(0),
+  lastRunAt: text("last_run_at"),
+  nextRunAt: text("next_run_at"),
+  /** How many times to retry a failed action (0 = no retry) */
+  maxRetries: integer("max_retries").notNull().default(2),
+  /** Built-in system rule that cannot be deleted */
+  isSystem: integer("is_system", { mode: "boolean" }).notNull().default(false),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index("idx_automation_rules_tenant").on(table.tenantId),
+  index("idx_automation_rules_trigger").on(table.triggerType),
+  index("idx_automation_rules_active").on(table.isActive),
+]);
+
+/**
+ * automation_executions — one record per rule invocation.
+ *
+ * status: queued | running | completed | failed | skipped | cancelled
+ */
+export const automationExecutions = sqliteTable("automation_executions", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  ruleId: text("rule_id").notNull().references(() => automationRules.id, { onDelete: "cascade" }),
+  /** The event that fired this execution */
+  triggerEvent: text("trigger_event").notNull(),
+  /** The primary entity affected (userId, tenantId, connectionId, …) */
+  entityType: text("entity_type"),
+  entityId: text("entity_id"),
+  status: text("status").notNull().default("queued"),
+  retryCount: integer("retry_count").notNull().default(0),
+  /** JSON snapshot of the trigger context */
+  contextSnapshot: text("context_snapshot").notNull().default("{}"),
+  errorMessage: text("error_message"),
+  startedAt: text("started_at"),
+  completedAt: text("completed_at"),
+  scheduledFor: text("scheduled_for"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index("idx_auto_exec_rule").on(table.ruleId),
+  index("idx_auto_exec_status").on(table.status),
+  index("idx_auto_exec_entity").on(table.entityType, table.entityId),
+  index("idx_auto_exec_scheduled").on(table.scheduledFor),
+]);
+
+/**
+ * automation_logs — granular log lines per execution step.
+ * level: info | warn | error | debug
+ */
+export const automationLogs = sqliteTable("automation_logs", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  executionId: text("execution_id").notNull().references(() => automationExecutions.id, { onDelete: "cascade" }),
+  level: text("level").notNull().default("info"),
+  message: text("message").notNull(),
+  /** JSON: arbitrary structured metadata */
+  metadata: text("metadata").notNull().default("{}"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  index("idx_auto_logs_execution").on(table.executionId),
+  index("idx_auto_logs_level").on(table.level),
+]);
+
+/**
+ * notification_templates — reusable in-app notification templates.
+ *
+ * channel: in_app | email | push | admin_alert
+ * variables_schema — JSON: string[] list of interpolation keys (e.g. ["userName","orgName"])
+ */
+export const notificationTemplates = sqliteTable("notification_templates", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  slug: text("slug").notNull(),
+  channel: text("channel").notNull().default("in_app"),
+  /** e.g. "You have a new match!" */
+  subject: text("subject").notNull(),
+  /** Handlebars-style: "Hi {{userName}}, you matched with {{matchName}}." */
+  bodyTemplate: text("body_template").notNull(),
+  /** JSON: string[] — declared interpolation variables */
+  variablesSchema: text("variables_schema").notNull().default("[]"),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_notif_tpl_slug").on(table.slug),
+]);
+
+/**
+ * email_templates — transactional email content (HTML + text).
+ */
+export const emailTemplates = sqliteTable("email_templates", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  slug: text("slug").notNull(),
+  subjectTemplate: text("subject_template").notNull(),
+  htmlTemplate: text("html_template").notNull(),
+  textTemplate: text("text_template").notNull(),
+  /** JSON: string[] */
+  variablesSchema: text("variables_schema").notNull().default("[]"),
+  fromName: text("from_name"),
+  fromEmail: text("from_email"),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_email_tpl_slug").on(table.slug),
+]);
+
+/**
+ * tenant_automation_config — per-tenant overrides for global automation behavior.
+ *
+ * notification_sensitivity: all | important_only | none
+ * email_digest_frequency:   realtime | daily | weekly | none
+ */
+export const tenantAutomationConfig = sqliteTable("tenant_automation_config", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  isAutomationEnabled: integer("is_automation_enabled", { mode: "boolean" }).notNull().default(true),
+  notificationSensitivity: text("notification_sensitivity").notNull().default("all"),
+  emailDigestFrequency: text("email_digest_frequency").notNull().default("realtime"),
+  /** JSON: TriggerType[] — specific trigger types this tenant has disabled */
+  disabledTriggers: text("disabled_triggers").notNull().default("[]"),
+  /** Max automations allowed to fire per user per day (anti-spam) */
+  maxDailyPerUser: integer("max_daily_per_user").notNull().default(20),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_tenant_auto_cfg_tenant").on(table.tenantId),
+]);
+
+/**
+ * notification_preferences — per-user channel preferences per automation category.
+ *
+ * category: matches | connections | mentorship | community | billing |
+ *           admin_alerts | platform | digest
+ */
+export const notificationPreferences = sqliteTable("notification_preferences", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  category: text("category").notNull(),
+  inAppEnabled: integer("in_app_enabled", { mode: "boolean" }).notNull().default(true),
+  emailEnabled: integer("email_enabled", { mode: "boolean" }).notNull().default(true),
+  pushEnabled: integer("push_enabled", { mode: "boolean" }).notNull().default(false),
+  /** realtime | daily | weekly | none — per-category email delivery mode */
+  emailDigestFrequency: text("email_digest_frequency").notNull().default("realtime"),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_notif_pref_user_cat").on(table.userId, table.category),
+  index("idx_notif_pref_user").on(table.userId),
+]);
