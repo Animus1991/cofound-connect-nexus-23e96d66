@@ -11,8 +11,10 @@ import { useTenant } from "@/contexts/TenantContext";
 import { isGlobalPlatformHost } from "@/lib/domainResolver";
 import { AnimatePresence } from "framer-motion";
 import PageTransition from "@/components/PageTransition";
-import ChatWidget from "@/components/ChatWidget";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import { Loader2 } from "lucide-react";
+
+const ChatWidget = lazy(() => import("@/components/ChatWidget"));
 
 // ── Lazy-loaded pages (code splitting) ───────────────────────
 const LandingPage = lazy(() => import("./pages/LandingPage"));
@@ -93,51 +95,66 @@ function DomainBootstrap({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 2,
+      gcTime: 1000 * 60 * 10,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+      retry: 1,
+      retryDelay: 1000,
+    },
+  },
+});
 
 function AnimatedRoutes() {
   const location = useLocation();
   return (
     <Suspense fallback={<PageLoader />}>
-    <AnimatePresence mode="wait">
+    <AnimatePresence mode="popLayout" initial={false}>
       <Routes location={location} key={location.pathname}>
+        {/* Public routes */}
         <Route path="/" element={<PageTransition><LandingPage /></PageTransition>} />
         <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
         <Route path="/signup" element={<PageTransition><SignupPage /></PageTransition>} />
-        <Route path="/onboarding" element={<PageTransition><OnboardingPage /></PageTransition>} />
-        <Route path="/dashboard" element={<PageTransition><DashboardPage /></PageTransition>} />
-        <Route path="/discover" element={<PageTransition><DiscoverPage /></PageTransition>} />
-        <Route path="/messages" element={<PageTransition><MessagesPage /></PageTransition>} />
-        <Route path="/network" element={<PageTransition><NetworkPage /></PageTransition>} />
-        <Route path="/opportunities" element={<PageTransition><OpportunitiesPage /></PageTransition>} />
-        <Route path="/profile" element={<PageTransition><ProfilePage /></PageTransition>} />
-        <Route path="/learning" element={<PageTransition><LearningPage /></PageTransition>} />
-        <Route path="/settings" element={<PageTransition><SettingsPage /></PageTransition>} />
-        <Route path="/mentors" element={<PageTransition><MentorsPage /></PageTransition>} />
-        <Route path="/communities" element={<PageTransition><CommunitiesPage /></PageTransition>} />
-        <Route path="/communities/:id" element={<PageTransition><CommunityDetailPage /></PageTransition>} />
-        <Route path="/milestones" element={<PageTransition><MilestonesPage /></PageTransition>} />
-        <Route path="/admin" element={<PageTransition><AdminDashboardPage /></PageTransition>} />
         <Route path="/demo" element={<PageTransition><DemoPage /></PageTransition>} />
         <Route path="/forgot-password" element={<PageTransition><ForgotPasswordPage /></PageTransition>} />
         <Route path="/reset-password" element={<PageTransition><ResetPasswordPage /></PageTransition>} />
         <Route path="/privacy" element={<PageTransition><PrivacyPage /></PageTransition>} />
         <Route path="/terms" element={<PageTransition><TermsPage /></PageTransition>} />
         <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
-        <Route path="/startup" element={<PageTransition><StartupPage /></PageTransition>} />
-        <Route path="/matches" element={<PageTransition><MatchesPage /></PageTransition>} />
-        <Route path="/matches/:userId" element={<PageTransition><MatchDetailPage /></PageTransition>} />
-        <Route path="/profile/:id" element={<PageTransition><PublicProfilePage /></PageTransition>} />
-        <Route path="/notifications" element={<PageTransition><NotificationsPage /></PageTransition>} />
-        <Route path="/mentors/:id" element={<PageTransition><MentorDetailPage /></PageTransition>} />
-        <Route path="/communities/:id/posts/:postId" element={<PageTransition><PostDetailPage /></PageTransition>} />
-        <Route path="/organizations" element={<PageTransition><OrganizationsPage /></PageTransition>} />
-        <Route path="/organizations/:id" element={<PageTransition><OrganizationDetailPage /></PageTransition>} />
-        <Route path="/saved" element={<PageTransition><SavedProfilesPage /></PageTransition>} />
         <Route path="/t/:slug" element={<TenantLandingPage />} />
         <Route path="/sso/callback" element={<SsoCallbackPage />} />
         <Route path="/pricing" element={<PageTransition><PricingPage /></PageTransition>} />
-        <Route path="/billing" element={<PageTransition><BillingPage /></PageTransition>} />
+        <Route path="/profile/:id" element={<PageTransition><PublicProfilePage /></PageTransition>} />
+        
+        {/* Protected routes */}
+        <Route path="/onboarding" element={<ProtectedRoute><PageTransition><OnboardingPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><PageTransition><DashboardPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/discover" element={<ProtectedRoute><PageTransition><DiscoverPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/messages" element={<ProtectedRoute><PageTransition><MessagesPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/network" element={<ProtectedRoute><PageTransition><NetworkPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/opportunities" element={<ProtectedRoute><PageTransition><OpportunitiesPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><PageTransition><ProfilePage /></PageTransition></ProtectedRoute>} />
+        <Route path="/learning" element={<ProtectedRoute><PageTransition><LearningPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><PageTransition><SettingsPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/mentors" element={<ProtectedRoute><PageTransition><MentorsPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/mentors/:id" element={<ProtectedRoute><PageTransition><MentorDetailPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/communities" element={<ProtectedRoute><PageTransition><CommunitiesPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/communities/:id" element={<ProtectedRoute><PageTransition><CommunityDetailPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/communities/:id/posts/:postId" element={<ProtectedRoute><PageTransition><PostDetailPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/milestones" element={<ProtectedRoute><PageTransition><MilestonesPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute><PageTransition><AdminDashboardPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/startup" element={<ProtectedRoute><PageTransition><StartupPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/matches" element={<ProtectedRoute><PageTransition><MatchesPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/matches/:userId" element={<ProtectedRoute><PageTransition><MatchDetailPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/notifications" element={<ProtectedRoute><PageTransition><NotificationsPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/organizations" element={<ProtectedRoute><PageTransition><OrganizationsPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/organizations/:id" element={<ProtectedRoute><PageTransition><OrganizationDetailPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/saved" element={<ProtectedRoute><PageTransition><SavedProfilesPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/billing" element={<ProtectedRoute><PageTransition><BillingPage /></PageTransition></ProtectedRoute>} />
+        
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>
@@ -156,7 +173,9 @@ const App = () => (
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <DomainBootstrap>
               <AnimatedRoutes />
-              <ChatWidget />
+              <Suspense fallback={null}>
+                <ChatWidget />
+              </Suspense>
             </DomainBootstrap>
           </BrowserRouter>
         </TooltipProvider>

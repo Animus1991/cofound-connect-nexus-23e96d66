@@ -87,19 +87,18 @@ export default function AppLayout({ title, children, headerActions }: AppLayoutP
   const isOverlay   = collapsed && hovered;   /* sidebar visible wide but content NOT shifted */
 
   /* ── Notifications polling ── */
-  const fetchNotifications = useCallback(async () => {
-    if (!isAuthenticated) return;
-    try {
-      const { unreadCount: count } = await api.notifications.list();
-      setUnreadCount(count);
-    } catch { /* backend may be offline */ }
-  }, [isAuthenticated]);
-
   useEffect(() => {
+    let mounted = true;
+    const fetchNotifications = async () => {
+      try {
+        const { unreadCount: count } = await api.notifications.list();
+        if (mounted) setUnreadCount(count);
+      } catch { /* backend may be offline */ }
+    };
     fetchNotifications();
     const iv = setInterval(fetchNotifications, 60_000);
-    return () => clearInterval(iv);
-  }, [fetchNotifications]);
+    return () => { mounted = false; clearInterval(iv); };
+  }, []);
 
   /* ── Shared sidebar nav link helper ── */
   function NavLink({

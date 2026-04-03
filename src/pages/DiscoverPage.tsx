@@ -114,10 +114,6 @@ export default function DiscoverPage() {
   const [modelVersion, setModelVersion] = useState<string | null>(null);
   const debouncedQuery = useDebounce(searchQuery, 350);
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) navigate("/login", { replace: true });
-  }, [authLoading, isAuthenticated, navigate]);
-
   const fetchRecommendations = useCallback(async (matchType: MatchTypeId) => {
     setIsLoading(true);
     try {
@@ -179,8 +175,8 @@ export default function DiscoverPage() {
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated) fetchRecommendations(activeMatchType);
-  }, [isAuthenticated, activeMatchType, fetchRecommendations]);
+    fetchRecommendations(activeMatchType);
+  }, [activeMatchType, fetchRecommendations]);
 
   useEffect(() => {
     if (debouncedQuery.trim().length < 2) { setSearchResults(null); return; }

@@ -90,12 +90,6 @@ export default function NetworkPage() {
   const [suggested, setSuggested] = useState(mockSuggested);
   const [connectedIds, setConnectedIds] = useState<string[]>([]);
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate("/login", { replace: true });
-    }
-  }, [authLoading, isAuthenticated, navigate]);
-
   // Fetch real data from API (falls back to mock data on error)
   const fetchData = useCallback(async () => {
     try {
@@ -160,8 +154,8 @@ export default function NetworkPage() {
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated) fetchData();
-  }, [isAuthenticated, fetchData]);
+    fetchData();
+  }, [fetchData]);
 
   const filteredConnections = connections.filter((c) =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

@@ -213,12 +213,6 @@ export default function OpportunitiesPage() {
   const [isSearching, setIsSearching] = useState(false);
   const debouncedQuery = useDebounce(searchQuery, 350);
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate("/login", { replace: true });
-    }
-  }, [authLoading, isAuthenticated, navigate]);
-
   const fetchData = useCallback(async () => {
     try {
       const [listRes, appRes, propRes] = await Promise.allSettled([
@@ -269,8 +263,8 @@ export default function OpportunitiesPage() {
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated) fetchData();
-  }, [isAuthenticated, fetchData]);
+    fetchData();
+  }, [fetchData]);
 
   // Live Orama-powered backend search
   useEffect(() => {

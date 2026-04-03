@@ -148,15 +148,10 @@ function OrgCard({ org }: { org: Organization }) {
 // ── Page ─────────────────────────────────────────────────────
 export default function OrganizationsPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) navigate("/login", { replace: true });
-  }, [authLoading, isAuthenticated, navigate]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -168,7 +163,7 @@ export default function OrganizationsPage() {
     }
   }, []);
 
-  useEffect(() => { if (isAuthenticated) load(); }, [isAuthenticated, load]);
+  useEffect(() => { load(); }, [load]);
 
   const filtered = organizations.filter((o) => {
     const matchesSearch = !search || o.name.toLowerCase().includes(search.toLowerCase()) ||

@@ -179,12 +179,6 @@ export default function ProfilePage() {
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate("/login", { replace: true });
-    }
-  }, [authLoading, isAuthenticated, navigate]);
-
   const fetchProfile = useCallback(async () => {
     try {
       const res = await api.profiles.getMe();
@@ -219,8 +213,8 @@ export default function ProfilePage() {
   }, [user]);
 
   useEffect(() => {
-    if (isAuthenticated) fetchProfile();
-  }, [isAuthenticated, fetchProfile]);
+    fetchProfile();
+  }, [fetchProfile]);
 
   const handleSave = async () => {
     setIsSaving(true);

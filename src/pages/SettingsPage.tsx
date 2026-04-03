@@ -42,20 +42,13 @@ interface ConnectedAccount {
 // ── Component ──────────────────────────────────────────────
 export default function SettingsPage() {
   const { toast } = useToast();
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("account");
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate("/login", { replace: true });
-    }
-  }, [authLoading, isAuthenticated, navigate]);
-
   // Fetch settings from API on mount
   useEffect(() => {
-    if (!isAuthenticated) return;
     api.settings.getMe().then((res) => {
       setAccountData({
         name: res.user?.name ?? user?.name ?? "",
@@ -74,7 +67,7 @@ export default function SettingsPage() {
         });
       }
     }).catch(() => { /* use defaults */ });
-  }, [isAuthenticated, user]);
+  }, [user]);
 
   // Account
   const [accountData, setAccountData] = useState({

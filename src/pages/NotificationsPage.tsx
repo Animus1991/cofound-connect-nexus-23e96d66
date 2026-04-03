@@ -190,10 +190,6 @@ export default function NotificationsPage() {
   const [tab, setTab] = useState("notifications");
   const [filter, setFilter] = useState<"all" | "unread">("all");
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) navigate("/login", { replace: true });
-  }, [authLoading, isAuthenticated, navigate]);
-
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -209,7 +205,7 @@ export default function NotificationsPage() {
     }
   }, []);
 
-  useEffect(() => { if (isAuthenticated) load(); }, [isAuthenticated, load]);
+  useEffect(() => { load(); }, [load]);
 
   const handleMarkRead = useCallback(async (id: string) => {
     setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));

@@ -10,9 +10,9 @@ const ease: Easing = "easeOut";
 const easeIn: Easing = "easeIn";
 
 const pageVariants = {
-  initial: { opacity: 0, y: 12 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.35, ease } },
-  exit: { opacity: 0, y: -8, transition: { duration: 0.2, ease: easeIn } },
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.15, ease } },
+  exit: { opacity: 0, y: -4, transition: { duration: 0.08, ease: easeIn } },
 };
 
 export default function PageTransition({ children, className }: PageTransitionProps) {

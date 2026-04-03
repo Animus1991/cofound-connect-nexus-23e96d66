@@ -86,12 +86,7 @@ export default function StartupPage() {
   const [techInput, setTechInput] = useState("");
   const [tagInput, setTagInput] = useState("");
 
-  useEffect(() => {
-    if (!isAuthenticated) navigate("/login", { replace: true });
-  }, [isAuthenticated, navigate]);
-
   const fetchStartup = useCallback(async () => {
-    if (!isAuthenticated) return;
     setIsLoading(true);
     try {
       const data = await api.startups.getMine();

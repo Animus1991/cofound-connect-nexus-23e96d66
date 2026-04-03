@@ -41,6 +41,10 @@ export function useNotifications() {
   const timersRef = useRef<NodeJS.Timeout[]>([]);
 
   useEffect(() => {
+    // Disable mock notifications in production - only show in development demo mode
+    const isDemoMode = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEMO_NOTIFICATIONS === "true";
+    if (!isDemoMode) return;
+
     timersRef.current = notificationQueue.map((notification) =>
       setTimeout(() => {
         toast({

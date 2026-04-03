@@ -103,12 +103,6 @@ export default function DashboardPage() {
 
   useNotifications();
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate("/login", { replace: true });
-    }
-  }, [authLoading, isAuthenticated, navigate]);
-
   const loadStats = useCallback(async () => {
     try {
       const [connsRes, reqsRes, suggestedRes, activityRes, matchesRes] = await Promise.allSettled([
@@ -140,9 +134,8 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated) loadStats();
-    else if (!authLoading) setIsLoading(false);
-  }, [isAuthenticated, authLoading, loadStats]);
+    loadStats();
+  }, [loadStats]);
 
   const displayName = user?.name?.split(" ")[0] ?? "there";
   const { tenant, isBrandingActive } = useTenant();
