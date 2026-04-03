@@ -20,6 +20,7 @@ export const profiles = sqliteTable("profiles", {
   headline: text("headline"),
   bio: text("bio"),
   location: text("location"),
+  country: text("country"),
   availability: text("availability"),
   stage: text("stage"),
   commitment: text("commitment"),
@@ -27,12 +28,108 @@ export const profiles = sqliteTable("profiles", {
   lookingFor: text("looking_for"),
   skills: text("skills").notNull().default("[]"),       // JSON array
   interests: text("interests").notNull().default("[]"), // JSON array
+  /** JSON array of roles: founder | cofounder | mentor | advisor | investor | operator */
+  roles: text("roles").notNull().default('["founder"]'),
+  /** JSON array of language codes, e.g. ["en", "el", "de"] */
+  languages: text("languages").notNull().default('["en"]'),
+  /** Years of professional experience */
+  experienceYears: integer("experience_years"),
+  /** Current job title / occupation */
+  currentOccupation: text("current_occupation"),
+  /** Education background (free text or JSON) */
+  education: text("education"),
+  /** Portfolio URL */
+  portfolioUrl: text("portfolio_url"),
   linkedin: text("linkedin"),
   github: text("github"),
   website: text("website"),
+  /** Profile visibility: public | connections | private */
+  visibility: text("visibility").notNull().default("public"),
+  /** Verification status: unverified | pending | verified */
+  verificationStatus: text("verification_status").notNull().default("unverified"),
+  /** 0-100 computed profile completion score */
+  profileCompletionScore: integer("profile_completion_score").notNull().default(0),
+  /** JSON: work style preferences { missionOrientation, riskTolerance, communicationStyle, decisionMakingStyle, speedVsStability, soloVsCollaborative } */
+  workStyle: text("work_style").notNull().default("{}"),
+  /** JSON: values and goals { primaryGoal, secondaryGoals, dealBreakers } */
+  valuesAndGoals: text("values_and_goals").notNull().default("{}"),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });
+
+// ── Skills Taxonomy ──────────────────────────────────────────────────────────
+// Master list of skills with categories for structured skill selection.
+
+export const skills = sqliteTable("skills", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  slug: text("slug").notNull(),
+  /** Category: technical | business | design | marketing | operations | leadership | domain */
+  category: text("category").notNull().default("technical"),
+  description: text("description"),
+  /** Parent skill ID for hierarchical skills */
+  parentId: text("parent_id"),
+  /** Display order within category */
+  sortOrder: integer("sort_order").notNull().default(0),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_skills_slug").on(table.slug),
+  index("idx_skills_category").on(table.category),
+]);
+
+// ── User Skills ──────────────────────────────────────────────────────────────
+// Junction table linking users to skills with proficiency levels.
+
+export const userSkills = sqliteTable("user_skills", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  skillId: text("skill_id").notNull().references(() => skills.id, { onDelete: "cascade" }),
+  /** Proficiency: beginner | intermediate | advanced | expert */
+  proficiency: text("proficiency").notNull().default("intermediate"),
+  /** Years of experience with this skill */
+  yearsExperience: integer("years_experience"),
+  /** Priority: primary | secondary | tertiary */
+  priority: text("priority").notNull().default("secondary"),
+  /** Is this skill actively being used / offered */
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_user_skills_pair").on(table.userId, table.skillId),
+  index("idx_user_skills_user").on(table.userId),
+]);
+
+// ── Industries Taxonomy ──────────────────────────────────────────────────────
+// Master list of industries for filtering and matching.
+
+export const industries = sqliteTable("industries", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  slug: text("slug").notNull(),
+  description: text("description"),
+  /** Parent industry ID for hierarchical industries */
+  parentId: text("parent_id"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_industries_slug").on(table.slug),
+]);
+
+// ── User Industries ──────────────────────────────────────────────────────────
+// Industries a user is interested in or has experience with.
+
+export const userIndustries = sqliteTable("user_industries", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  industryId: text("industry_id").notNull().references(() => industries.id, { onDelete: "cascade" }),
+  /** interest | experience | both */
+  relationshipType: text("relationship_type").notNull().default("interest"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+  uniqueIndex("idx_user_industries_pair").on(table.userId, table.industryId),
+  index("idx_user_industries_user").on(table.userId),
+]);
 
 // ── User Settings ────────────────────────────────────────────────────────────
 

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -128,162 +129,166 @@ function MatchCard({
       layout
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-card border border-border rounded-2xl p-5 hover:border-primary/20 transition-all group"
+      className="group"
     >
-      <div className="flex items-start gap-4">
-        {/* Avatar */}
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-white font-semibold flex-shrink-0">
-          {initials}
-        </div>
-
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <h3 className="font-semibold text-foreground text-sm">{match.name}</h3>
-              {match.headline && (
-                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{match.headline}</p>
-              )}
-            </div>
-            <ScoreRing score={match.score} />
-          </div>
-
-          <div className="flex flex-wrap gap-2 mt-2">
-            {match.location && (
-              <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                <MapPin className="w-3 h-3" />{match.location}
-              </span>
-            )}
-            {match.stage && (
-              <Badge variant="secondary" className="text-xs py-0 px-2 bg-secondary/50 text-foreground/80">
-                {STAGE_LABELS[match.stage] ?? match.stage}
-              </Badge>
-            )}
-            {match.commitment && (
-              <Badge variant="secondary" className="text-xs py-0 px-2 bg-secondary/50 text-foreground/80">
-                {COMMITMENT_LABELS[match.commitment] ?? match.commitment}
-              </Badge>
-            )}
-          </div>
-
-          {/* Skills preview */}
-          {match.skills.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-2.5">
-              {match.skills.slice(0, 5).map((skill) => (
-                <span key={skill} className="text-xs bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full">
-                  {skill}
-                </span>
-              ))}
-              {match.skills.length > 5 && (
-                <span className="text-xs text-muted-foreground/70">+{match.skills.length - 5} more</span>
-              )}
-            </div>
-          )}
-
-          {/* Explanation */}
-          {match.sharedStrengths.length > 0 && (
-            <p className="text-xs text-muted-foreground mt-2.5 italic line-clamp-2">
-              Shared strengths: {match.sharedStrengths.join(", ")}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Dimension bars */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
-          >
-            <div className="mt-4 pt-4 border-t border-border/50 grid grid-cols-2 gap-2.5">
-              {Object.entries(match.dimensions).map(([key, val]) => {
-                const meta = DIMENSION_LABELS[key];
-                if (!meta) return null;
-                const Icon = meta.icon;
-                const col = val >= 75 ? "bg-green-500" : val >= 55 ? "bg-blue-500" : val >= 35 ? "bg-amber-500" : "bg-red-500";
-                return (
-                  <div key={key} className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Icon className="w-3 h-3" />{meta.label}
-                      </span>
-                      <span className="text-xs text-foreground/80 font-medium">{val}%</span>
-                    </div>
-                    <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${val}%` }}
-                        transition={{ duration: 0.6, delay: 0.1 }}
-                        className={`h-full rounded-full ${col}`}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+      <Card variant="elevated" padding="lg" className="hover-lift">
+        <CardContent className="p-0">
+          <div className="flex items-start gap-4">
+            {/* Avatar */}
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-white font-semibold flex-shrink-0">
+              {initials}
             </div>
 
-            {(match.sharedStrengths.length > 0 || match.complementaryStrengths.length > 0 || match.mismatches.length > 0) && (
-              <div className="mt-3 grid grid-cols-1 gap-2 text-xs">
-                {match.sharedStrengths.length > 0 && (
-                  <div className="flex gap-1.5 items-start">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 mt-0.5 flex-shrink-0" />
-                    <span className="text-foreground/80">Shared: {match.sharedStrengths.join(", ")}</span>
-                  </div>
-                )}
-                {match.complementaryStrengths.length > 0 && (
-                  <div className="flex gap-1.5 items-start">
-                    <Star className="w-3.5 h-3.5 text-blue-400 mt-0.5 flex-shrink-0" />
-                    <span className="text-foreground/80">They bring: {match.complementaryStrengths.join(", ")}</span>
-                  </div>
-                )}
-                {match.mismatches.map((m, i) => (
-                  <div key={i} className="flex gap-1.5 items-start">
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
-                    <span className="text-muted-foreground">{m}</span>
-                  </div>
-                ))}
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <h3 className="heading-5 text-foreground group-hover:text-primary transition-colors">{match.name}</h3>
+                  {match.headline && (
+                    <p className="body-small text-muted-foreground line-clamp-2">{match.headline}</p>
+                  )}
+                </div>
+                <ScoreRing score={match.score} />
               </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      {/* Actions */}
-      <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
-          >
-            {expanded ? "Hide breakdown" : "Show breakdown"}
-            <ChevronRight className={`w-3 h-3 transition-transform ${expanded ? "rotate-90" : ""}`} />
-          </button>
-          <Link
-            to={`/matches/${match.userId}`}
-            className="text-xs text-primary hover:text-primary/80 transition-colors"
-          >
-            View profile →
-          </Link>
-        </div>
-        {connected ? (
-          <span className="flex items-center gap-1.5 text-xs text-green-500">
-            <CheckCircle2 className="w-3.5 h-3.5" /> Request sent
-          </span>
-        ) : (
-          <Button
-            size="sm"
-            onClick={() => onConnect(match)}
-            disabled={isConnecting}
-            className="h-7 px-3 text-xs bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg"
-          >
-            {isConnecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3 mr-1" />}
-            Connect
-          </Button>
-        )}
-      </div>
+              <div className="flex flex-wrap gap-2 mt-3">
+                {match.location && (
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <MapPin className="w-3 h-3" />{match.location}
+                  </span>
+                )}
+                {match.stage && (
+                  <Badge variant="secondary" className="text-xs py-1 px-2 bg-secondary/50 text-foreground/80">
+                    {STAGE_LABELS[match.stage] ?? match.stage}
+                  </Badge>
+                )}
+                {match.commitment && (
+                  <Badge variant="secondary" className="text-xs py-1 px-2 bg-secondary/50 text-foreground/80">
+                    {COMMITMENT_LABELS[match.commitment] ?? match.commitment}
+                  </Badge>
+                )}
+              </div>
+
+              {/* Skills preview */}
+              {match.skills.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {match.skills.slice(0, 5).map((skill) => (
+                    <Badge key={skill} variant="outline" className="text-xs px-2 py-0.5 border-primary/20 text-primary bg-primary/5">
+                      {skill}
+                    </Badge>
+                  ))}
+                  {match.skills.length > 5 && (
+                    <span className="text-xs text-muted-foreground/70">+{match.skills.length - 5} more</span>
+                  )}
+                </div>
+              )}
+
+              {/* Explanation */}
+              {match.sharedStrengths.length > 0 && (
+                <p className="body-xs text-muted-foreground mt-3 italic line-clamp-2">
+                  Shared strengths: {match.sharedStrengths.join(", ")}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Dimension bars */}
+          <AnimatePresence>
+            {expanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="mt-4 pt-4 border-t border-border/50 grid grid-cols-2 gap-3">
+                  {Object.entries(match.dimensions).map(([key, val]) => {
+                    const meta = DIMENSION_LABELS[key];
+                    if (!meta) return null;
+                    const Icon = meta.icon;
+                    const col = val >= 75 ? "bg-emerald-500" : val >= 55 ? "bg-blue-500" : val >= 35 ? "bg-amber-500" : "bg-red-500";
+                    return (
+                      <div key={key} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-1 ui-small text-muted-foreground">
+                            <Icon className="w-3 h-3" />{meta.label}
+                          </span>
+                          <span className="ui-small text-foreground/80 font-medium">{val}%</span>
+                        </div>
+                        <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${val}%` }}
+                            transition={{ duration: 0.6, delay: 0.1 }}
+                            className={`h-full rounded-full ${col}`}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {(match.sharedStrengths.length > 0 || match.complementaryStrengths.length > 0 || match.mismatches.length > 0) && (
+                  <div className="mt-4 grid grid-cols-1 gap-2 text-xs">
+                    {match.sharedStrengths.length > 0 && (
+                      <div className="flex gap-2 items-start">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                        <span className="text-foreground/80">Shared: {match.sharedStrengths.join(", ")}</span>
+                      </div>
+                    )}
+                    {match.complementaryStrengths.length > 0 && (
+                      <div className="flex gap-2 items-start">
+                        <Star className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                        <span className="text-foreground/80">They bring: {match.complementaryStrengths.join(", ")}</span>
+                      </div>
+                    )}
+                    {match.mismatches.map((m, i) => (
+                      <div key={i} className="flex gap-2 items-start">
+                        <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                        <span className="text-muted-foreground">{m}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Actions */}
+          <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setExpanded(!expanded)}
+                className="ui-small text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+              >
+                {expanded ? "Hide breakdown" : "Show breakdown"}
+                <ChevronRight className={`w-3 h-3 transition-transform ${expanded ? "rotate-90" : ""}`} />
+              </button>
+              <Link
+                to={`/matches/${match.userId}`}
+                className="ui-small text-primary hover:text-primary/80 transition-colors"
+              >
+                View profile →
+              </Link>
+            </div>
+            {connected ? (
+              <span className="flex items-center gap-1.5 ui-small text-emerald-500">
+                <CheckCircle2 className="w-4 h-4" /> Request sent
+              </span>
+            ) : (
+              <Button
+                size="sm"
+                onClick={() => onConnect(match)}
+                disabled={isConnecting}
+                className="h-8 px-4 ui-small bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg"
+              >
+                {isConnecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3 mr-1" />}
+                Connect
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </motion.div>
   );
 }
@@ -358,164 +363,254 @@ export default function MatchesPage() {
 
   return (
     <AppLayout title="Matches">
-      <div className="px-2 py-3 space-y-4">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-primary" />
-              Match Discovery
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Explainable compatibility scores — find your ideal co-founder or collaborator.
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowPrefs(true)}
-              className="border-border text-muted-foreground hover:bg-secondary hover:text-foreground"
-            >
-              <SlidersHorizontal className="w-4 h-4 mr-1.5" />
-              Preferences
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={load}
-              disabled={loading}
-              className="border-border text-muted-foreground hover:bg-secondary hover:text-foreground"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-            </Button>
-          </div>
-        </div>
+      <div className="flex h-full">
+        {/* Sidebar Filters - Desktop */}
+        <div className="hidden lg:block w-80 border-r border-border bg-card/50 p-6">
+          <div className="space-y-6">
+            <div>
+              <h3 className="heading-5 text-foreground mb-4 flex items-center gap-2">
+                <SlidersHorizontal className="h-5 w-5" /> Filters
+              </h3>
+              
+              {/* Stage Filter */}
+              <div className="space-y-2">
+                <Label className="ui-base font-medium">Stage</Label>
+                <Select value={stageFilter} onValueChange={setStageFilter}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Any Stage" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Any Stage</SelectItem>
+                    <SelectItem value="idea">Idea Stage</SelectItem>
+                    <SelectItem value="mvp">Building MVP</SelectItem>
+                    <SelectItem value="traction">Early Traction</SelectItem>
+                    <SelectItem value="growth">Growth</SelectItem>
+                    <SelectItem value="scale">Scaling</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-        {/* Stats bar */}
-        {!loading && total > 0 && (
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-card border border-border rounded-xl p-3 text-center">
-              <div className="text-xl font-bold text-foreground">{total}</div>
-              <div className="text-xs text-muted-foreground mt-0.5">Potential Matches</div>
-            </div>
-            <div className="bg-card border border-green-500/20 rounded-xl p-3 text-center">
-              <div className="text-xl font-bold text-green-500">{excellentCount}</div>
-              <div className="text-xs text-muted-foreground mt-0.5">Excellent Fits (80+)</div>
-            </div>
-            <div className="bg-card border border-blue-500/20 rounded-xl p-3 text-center">
-              <div className="text-xl font-bold text-blue-400">{goodCount}</div>
-              <div className="text-xs text-muted-foreground mt-0.5">Good Fits (65–79)</div>
-            </div>
-          </div>
-        )}
+              {/* Commitment Filter */}
+              <div className="space-y-2">
+                <Label className="ui-base font-medium">Commitment</Label>
+                <Select value={commitmentFilter} onValueChange={setCommitmentFilter}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Any Commitment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Any Commitment</SelectItem>
+                    <SelectItem value="full-time">Full-time</SelectItem>
+                    <SelectItem value="part-time">Part-time</SelectItem>
+                    <SelectItem value="flexible">Flexible</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-3 p-4 bg-card/60 border border-border rounded-xl">
-          <div className="flex items-center gap-2 text-foreground/80 text-sm font-medium">
-            <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
-            Filters
-          </div>
-          <Select value={stageFilter} onValueChange={setStageFilter}>
-            <SelectTrigger className="w-40 h-8 text-xs">
-              <SelectValue placeholder="Any Stage" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Any Stage</SelectItem>
-              <SelectItem value="idea">Idea Stage</SelectItem>
-              <SelectItem value="mvp">Building MVP</SelectItem>
-              <SelectItem value="traction">Early Traction</SelectItem>
-              <SelectItem value="growth">Growth</SelectItem>
-              <SelectItem value="scale">Scaling</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={commitmentFilter} onValueChange={setCommitmentFilter}>
-            <SelectTrigger className="w-40 h-8 text-xs">
-              <SelectValue placeholder="Any Commitment" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Any Commitment</SelectItem>
-              <SelectItem value="full-time">Full-time</SelectItem>
-              <SelectItem value="part-time">Part-time</SelectItem>
-              <SelectItem value="flexible">Flexible</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Min score</span>
-            <Input
-              type="number"
-              min={0}
-              max={100}
-              value={minScore || ""}
-              onChange={(e) => setMinScore(parseInt(e.target.value || "0", 10))}
-              placeholder="0"
-              className="w-20 h-8 text-xs"
-            />
-          </div>
-          {(stageFilter !== "all" || commitmentFilter !== "all" || minScore > 0) && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 text-xs text-muted-foreground hover:text-foreground px-2"
-              onClick={() => { setStageFilter("all"); setCommitmentFilter("all"); setMinScore(0); }}
-            >
-              <X className="w-3 h-3 mr-1" /> Clear
-            </Button>
-          )}
-        </div>
-
-        {/* Match grid */}
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-card border border-border rounded-2xl p-5 animate-pulse">
-                <div className="flex gap-4">
-                  <div className="w-12 h-12 rounded-full bg-secondary" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-secondary rounded w-32" />
-                    <div className="h-3 bg-secondary rounded w-48" />
-                    <div className="flex gap-2 mt-2">
-                      <div className="h-5 bg-secondary rounded w-16" />
-                      <div className="h-5 bg-secondary rounded w-20" />
-                    </div>
-                  </div>
-                  <div className="w-16 h-16 rounded-full bg-secondary" />
+              {/* Min Score Filter */}
+              <div className="space-y-2">
+                <Label className="ui-base font-medium">Min Match Score</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={minScore || ""}
+                    onChange={(e) => setMinScore(parseInt(e.target.value || "0", 10))}
+                    placeholder="0"
+                    className="flex-1"
+                  />
+                  <span className="ui-small text-muted-foreground">%</span>
                 </div>
               </div>
-            ))}
-          </div>
-        ) : matches.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mb-4">
-              <Users className="w-8 h-8 text-muted-foreground/70" />
+
+              {/* Clear Filters */}
+              {(stageFilter !== "all" || commitmentFilter !== "all" || minScore > 0) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => { setStageFilter("all"); setCommitmentFilter("all"); setMinScore(0); }}
+                  className="w-full"
+                >
+                  <X className="h-4 w-4 mr-2" /> Clear Filters
+                </Button>
+              )}
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">No matches found</h3>
-            <p className="text-muted-foreground text-sm max-w-sm mb-4">
-              Complete your profile and set matching preferences to get better match suggestions.
-            </p>
-            <Button
-              size="sm"
-              onClick={() => setShowPrefs(true)}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              Set Preferences
-            </Button>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <AnimatePresence>
-              {matches.map((match) => (
-                <MatchCard
-                  key={match.userId}
-                  match={match}
-                  onConnect={handleConnect}
-                  isConnecting={connectingId === match.userId}
-                  connected={connectedIds.has(match.userId)}
-                />
-              ))}
-            </AnimatePresence>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 min-h-0">
+          <div className="p-6 space-y-6 h-full overflow-y-auto">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div>
+                <h1 className="heading-1 text-foreground flex items-center gap-3">
+                  <Sparkles className="h-8 w-8 text-primary" />
+                  Match Discovery
+                </h1>
+                <p className="body-base text-muted-foreground mt-2 leading-relaxed">
+                  Explainable compatibility scores — find your ideal co-founder or collaborator.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPrefs(true)}
+                  className="gap-2"
+                >
+                  <SlidersHorizontal className="w-4 h-4" /> Preferences
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={load}
+                  disabled={loading}
+                  className="gap-2"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+                </Button>
+              </div>
+            </div>
+
+            {/* Stats Bar */}
+            {!loading && total > 0 && (
+              <div className="grid grid-cols-3 gap-4">
+                <Card variant="elevated" padding="lg">
+                  <CardContent className="p-0 text-center">
+                    <div className="heading-2 text-foreground">{total}</div>
+                    <div className="ui-small text-muted-foreground mt-1">Potential Matches</div>
+                  </CardContent>
+                </Card>
+                <Card variant="elevated" padding="lg">
+                  <CardContent className="p-0 text-center">
+                    <div className="heading-2 text-emerald-500">{excellentCount}</div>
+                    <div className="ui-small text-muted-foreground mt-1">Excellent Fits (80+)</div>
+                  </CardContent>
+                </Card>
+                <Card variant="elevated" padding="lg">
+                  <CardContent className="p-0 text-center">
+                    <div className="heading-2 text-blue-400">{goodCount}</div>
+                    <div className="ui-small text-muted-foreground mt-1">Good Fits (65–79)</div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Mobile Filters */}
+            <div className="lg:hidden">
+              <Card variant="elevated" padding="lg">
+                <CardContent className="p-0 space-y-4">
+                  <div className="flex items-center gap-2 text-foreground font-medium">
+                    <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
+                    Filters
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Select value={stageFilter} onValueChange={setStageFilter}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Any Stage" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Any Stage</SelectItem>
+                        <SelectItem value="idea">Idea Stage</SelectItem>
+                        <SelectItem value="mvp">Building MVP</SelectItem>
+                        <SelectItem value="traction">Early Traction</SelectItem>
+                        <SelectItem value="growth">Growth</SelectItem>
+                        <SelectItem value="scale">Scaling</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={commitmentFilter} onValueChange={setCommitmentFilter}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Any Commitment" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Any Commitment</SelectItem>
+                        <SelectItem value="full-time">Full-time</SelectItem>
+                        <SelectItem value="part-time">Part-time</SelectItem>
+                        <SelectItem value="flexible">Flexible</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="flex items-center gap-2">
+                      <span className="ui-small text-muted-foreground">Min score</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={minScore || ""}
+                        onChange={(e) => setMinScore(parseInt(e.target.value || "0", 10))}
+                        placeholder="0"
+                        className="w-20"
+                      />
+                    </div>
+                  </div>
+                  {(stageFilter !== "all" || commitmentFilter !== "all" || minScore > 0) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => { setStageFilter("all"); setCommitmentFilter("all"); setMinScore(0); }}
+                      className="w-full"
+                    >
+                      <X className="w-3 h-3 mr-1" /> Clear
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Match Grid */}
+            {loading ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                  <Card key={i} variant="elevated" padding="lg">
+                    <CardContent className="p-0">
+                      <div className="flex gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-secondary animate-pulse" />
+                        <div className="flex-1 space-y-3">
+                          <div className="h-4 bg-secondary rounded w-32 animate-pulse" />
+                          <div className="h-3 bg-secondary rounded w-48 animate-pulse" />
+                          <div className="flex gap-2 mt-2">
+                            <div className="h-5 bg-secondary rounded w-16 animate-pulse" />
+                            <div className="h-5 bg-secondary rounded w-20 animate-pulse" />
+                          </div>
+                        </div>
+                        <div className="w-16 h-16 rounded-xl bg-secondary animate-pulse" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : matches.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="w-20 h-20 bg-secondary rounded-2xl flex items-center justify-center mb-6">
+                  <Users className="h-10 w-10 text-muted-foreground/70" />
+                </div>
+                <h3 className="heading-3 text-foreground mb-3">No matches found</h3>
+                <p className="body-base text-muted-foreground max-w-md mb-6 leading-relaxed">
+                  Complete your profile and set matching preferences to get better match suggestions.
+                </p>
+                <Button
+                  size="lg"
+                  onClick={() => setShowPrefs(true)}
+                  className="gap-2"
+                >
+                  Set Preferences
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                <AnimatePresence>
+                  {matches.map((match) => (
+                    <MatchCard
+                      key={match.userId}
+                      match={match}
+                      onConnect={handleConnect}
+                      isConnecting={connectingId === match.userId}
+                      connected={connectedIds.has(match.userId)}
+                    />
+                  ))}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Connect modal */}

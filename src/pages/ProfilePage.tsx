@@ -36,6 +36,10 @@ import {
   Star,
   TrendingUp,
   Award,
+  ChevronRight,
+  Sparkles,
+  Settings2,
+  UserPlus,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -378,6 +382,53 @@ export default function ProfilePage() {
             </div>
           </motion.div>
         </div>
+
+        {/* Quick Actions */}
+        <motion.div {...stagger(2.5)} className="rounded-2xl border border-border/50 bg-card p-4">
+          <h3 className="font-display text-sm font-semibold text-foreground mb-3">Quick Actions</h3>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <button
+              onClick={() => navigate("/skills")}
+              className="flex items-center justify-between gap-2 rounded-lg border border-border/30 bg-secondary/20 p-3 text-left transition-all hover:bg-secondary/40 hover:border-primary/20 group"
+            >
+              <div className="flex items-center gap-2">
+                <Award className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">Manage Skills</span>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            </button>
+            <button
+              onClick={() => navigate("/work-style")}
+              className="flex items-center justify-between gap-2 rounded-lg border border-border/30 bg-secondary/20 p-3 text-left transition-all hover:bg-secondary/40 hover:border-primary/20 group"
+            >
+              <div className="flex items-center gap-2">
+                <Heart className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">Work Style & Values</span>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            </button>
+            <button
+              onClick={() => navigate("/match-preferences")}
+              className="flex items-center justify-between gap-2 rounded-lg border border-border/30 bg-secondary/20 p-3 text-left transition-all hover:bg-secondary/40 hover:border-primary/20 group"
+            >
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">Match Preferences</span>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            </button>
+            <button
+              onClick={() => navigate("/requests")}
+              className="flex items-center justify-between gap-2 rounded-lg border border-border/30 bg-secondary/20 p-3 text-left transition-all hover:bg-secondary/40 hover:border-primary/20 group"
+            >
+              <div className="flex items-center gap-2">
+                <UserPlus className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">Connection Requests</span>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            </button>
+          </div>
+        </motion.div>
 
         {/* Experience Timeline */}
         <motion.div {...stagger(3)} className="rounded-2xl border border-border/50 bg-card p-6">

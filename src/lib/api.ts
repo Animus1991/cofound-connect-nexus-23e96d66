@@ -571,4 +571,96 @@ export const api = {
         body: JSON.stringify(body),
       }),
   },
+
+  // ── Taxonomy API ─────────────────────────────────────────────
+  taxonomy: {
+    // Skills
+    getSkills: () =>
+      request<{ skills: Skill[]; byCategory: Record<string, Skill[]> }>("/api/taxonomy/skills"),
+    getSkillCategories: () =>
+      request<{ categories: SkillCategory[] }>("/api/taxonomy/skills/categories"),
+    getMySkills: () =>
+      request<{ skills: UserSkill[] }>("/api/taxonomy/me/skills"),
+    updateMySkills: (skills: Array<{ skillId: string; proficiency?: string; yearsExperience?: number; priority?: string }>) =>
+      request<{ success: boolean }>("/api/taxonomy/me/skills", {
+        method: "PUT",
+        body: JSON.stringify({ skills }),
+      }),
+    addMySkill: (skill: { skillId: string; proficiency?: string; yearsExperience?: number; priority?: string }) =>
+      request<{ success: boolean }>("/api/taxonomy/me/skills", {
+        method: "POST",
+        body: JSON.stringify(skill),
+      }),
+    removeMySkill: (skillId: string) =>
+      request<{ success: boolean }>(`/api/taxonomy/me/skills/${skillId}`, { method: "DELETE" }),
+
+    // Industries
+    getIndustries: () =>
+      request<{ industries: Industry[] }>("/api/taxonomy/industries"),
+    getMyIndustries: () =>
+      request<{ industries: UserIndustry[] }>("/api/taxonomy/me/industries"),
+    updateMyIndustries: (industries: Array<{ industryId: string; relationshipType?: string }>) =>
+      request<{ success: boolean }>("/api/taxonomy/me/industries", {
+        method: "PUT",
+        body: JSON.stringify({ industries }),
+      }),
+
+    // Roles
+    getRoles: () =>
+      request<{ roles: Role[] }>("/api/taxonomy/roles"),
+
+    // Admin
+    seedTaxonomy: () =>
+      request<{ success: boolean; skillsCount: number; industriesCount: number }>("/api/taxonomy/admin/seed", { method: "POST" }),
+  },
 };
+
+// ── Taxonomy Types ─────────────────────────────────────────────
+export interface Skill {
+  id: string;
+  name: string;
+  slug: string;
+  category: string;
+  description: string | null;
+  parentId: string | null;
+  sortOrder: number;
+}
+
+export interface SkillCategory {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface UserSkill {
+  id: string;
+  skillId: string;
+  proficiency: string;
+  yearsExperience: number | null;
+  priority: string;
+  isActive: boolean;
+  skillName: string;
+  skillCategory: string;
+}
+
+export interface Industry {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  parentId: string | null;
+  sortOrder: number;
+}
+
+export interface UserIndustry {
+  id: string;
+  industryId: string;
+  relationshipType: string;
+  industryName: string;
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  description: string;
+}

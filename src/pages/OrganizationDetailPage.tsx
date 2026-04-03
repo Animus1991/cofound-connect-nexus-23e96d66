@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import {
   ArrowLeft,
   Building2,
@@ -18,6 +21,10 @@ import {
   Shield,
   Calendar,
   CheckCircle2,
+  Search,
+  UserPlus,
+  MessageSquare,
+  Info,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -35,6 +42,25 @@ interface Organization {
   plan?: string;
   createdAt: string;
 }
+
+interface OrgMember {
+  id: string;
+  name: string;
+  role: string;
+  headline?: string;
+  joinedAt: string;
+  isAdmin?: boolean;
+}
+
+// Mock members for demo (would come from API in production)
+const MOCK_MEMBERS: OrgMember[] = [
+  { id: "m1", name: "Sarah Chen", role: "Program Director", headline: "Leading accelerator programs", joinedAt: "2024-01-15", isAdmin: true },
+  { id: "m2", name: "James Wilson", role: "Mentor", headline: "Serial entrepreneur, 3 exits", joinedAt: "2024-02-20" },
+  { id: "m3", name: "Maria Santos", role: "Mentor", headline: "VC Partner at Sequoia", joinedAt: "2024-03-10" },
+  { id: "m4", name: "Alex Kim", role: "Portfolio Founder", headline: "Building AI tools for developers", joinedAt: "2024-04-05" },
+  { id: "m5", name: "Priya Sharma", role: "Portfolio Founder", headline: "Fintech startup founder", joinedAt: "2024-05-12" },
+  { id: "m6", name: "David Okonkwo", role: "Advisor", headline: "Growth expert, ex-Stripe", joinedAt: "2024-06-01" },
+];
 
 // ── Constants ──────────────────────────────────────────────
 const TYPE_META: Record<string, { label: string; icon: React.ElementType; color: string; bg: string }> = {
@@ -92,9 +118,13 @@ function Skeleton() {
 // ── Page ─────────────────────────────────────────────────────
 export default function OrganizationDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [org, setOrg] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [memberSearch, setMemberSearch] = useState("");
+  const [members] = useState<OrgMember[]>(MOCK_MEMBERS);
 
   const load = useCallback(async () => {
     if (!id) { setNotFound(true); setLoading(false); return; }
@@ -220,88 +250,189 @@ export default function OrganizationDetailPage() {
             </motion.div>
           </div>
 
-          {/* ── Right: Details ───────────────────────────────── */}
-          <div className="lg:col-span-2 space-y-4">
-            {/* Description */}
-            {org.description ? (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 }}
-                className="rounded-xl border border-border bg-card/60 p-5"
-              >
-                <h3 className="mb-3 font-display text-sm font-semibold text-foreground">About</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{org.description}</p>
-              </motion.div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 }}
-                className="rounded-xl border border-border bg-card/60 p-5"
-              >
-                <h3 className="mb-3 font-display text-sm font-semibold text-foreground">About</h3>
-                <p className="text-sm text-muted-foreground italic">
-                  This organization hasn't added a description yet.
-                </p>
-              </motion.div>
-            )}
+          {/* ── Right: Tabbed Content ───────────────────────────────── */}
+          <div className="lg:col-span-2">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="mb-4">
+                <TabsTrigger value="overview" className="gap-2">
+                  <Info className="h-4 w-4" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="members" className="gap-2">
+                  <Users className="h-4 w-4" />
+                  Members
+                  <Badge variant="secondary" className="ml-1 text-[10px]">{members.length}</Badge>
+                </TabsTrigger>
+              </TabsList>
 
-            {/* What they offer */}
-            {valueProps.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="rounded-xl border border-border bg-card/60 p-5"
-              >
-                <h3 className="mb-4 font-display text-sm font-semibold text-foreground">
-                  What {meta.label}s typically offer
-                </h3>
-                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                  {valueProps.map((prop) => (
-                    <div key={prop} className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-primary" />
-                      {prop}
+              {/* Overview Tab */}
+              <TabsContent value="overview" className="space-y-4 mt-0">
+                {/* Description */}
+                {org.description ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 }}
+                    className="rounded-xl border border-border bg-card/60 p-5"
+                  >
+                    <h3 className="mb-3 font-display text-sm font-semibold text-foreground">About</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{org.description}</p>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 }}
+                    className="rounded-xl border border-border bg-card/60 p-5"
+                  >
+                    <h3 className="mb-3 font-display text-sm font-semibold text-foreground">About</h3>
+                    <p className="text-sm text-muted-foreground italic">
+                      This organization hasn't added a description yet.
+                    </p>
+                  </motion.div>
+                )}
+
+                {/* What they offer */}
+                {valueProps.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="rounded-xl border border-border bg-card/60 p-5"
+                  >
+                    <h3 className="mb-4 font-display text-sm font-semibold text-foreground">
+                      What {meta.label}s typically offer
+                    </h3>
+                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                      {valueProps.map((prop) => (
+                        <div key={prop} className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-primary" />
+                          {prop}
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
+                  </motion.div>
+                )}
 
-            {/* CTA */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className="relative overflow-hidden rounded-xl border border-primary/20 bg-primary/5 p-5"
-            >
-              <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-primary/5 blur-2xl pointer-events-none" />
-              <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="font-display text-sm font-semibold text-foreground">
-                    Interested in {org.name}?
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    Connect with founders and professionals from this organization.
-                  </p>
-                </div>
-                <div className="flex gap-2 shrink-0">
-                  {org.websiteUrl && (
-                    <a href={org.websiteUrl} target="_blank" rel="noopener noreferrer">
-                      <Button variant="outline" size="sm" className="gap-1.5 text-xs">
-                        <Globe className="h-3.5 w-3.5" /> Website
+                {/* CTA */}
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 }}
+                  className="relative overflow-hidden rounded-xl border border-primary/20 bg-primary/5 p-5"
+                >
+                  <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-primary/5 blur-2xl pointer-events-none" />
+                  <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="font-display text-sm font-semibold text-foreground">
+                        Interested in {org.name}?
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        Connect with founders and professionals from this organization.
+                      </p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      {org.websiteUrl && (
+                        <a href={org.websiteUrl} target="_blank" rel="noopener noreferrer">
+                          <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                            <Globe className="h-3.5 w-3.5" /> Website
+                          </Button>
+                        </a>
+                      )}
+                      <Button size="sm" className="gap-1.5 text-xs" onClick={() => setActiveTab("members")}>
+                        <Users className="h-3.5 w-3.5" /> View members
                       </Button>
-                    </a>
-                  )}
-                  <Link to="/discover">
-                    <Button size="sm" className="gap-1.5 text-xs">
-                      <Users className="h-3.5 w-3.5" /> Find members
-                    </Button>
-                  </Link>
+                    </div>
+                  </div>
+                </motion.div>
+              </TabsContent>
+
+              {/* Members Tab */}
+              <TabsContent value="members" className="mt-0">
+                <div className="rounded-xl border border-border bg-card/60 p-5">
+                  {/* Search */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Search members..."
+                        value={memberSearch}
+                        onChange={(e) => setMemberSearch(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Members List */}
+                  <div className="space-y-2">
+                    {members
+                      .filter((m) =>
+                        m.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
+                        m.role.toLowerCase().includes(memberSearch.toLowerCase()) ||
+                        (m.headline?.toLowerCase().includes(memberSearch.toLowerCase()) ?? false)
+                      )
+                      .map((member, i) => (
+                        <motion.div
+                          key={member.id}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.03 }}
+                          className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-secondary/20 hover:bg-secondary/40 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback className="bg-primary/15 text-primary text-sm">
+                                {initials(member.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-sm">{member.name}</span>
+                                {member.isAdmin && (
+                                  <Badge variant="secondary" className="text-[9px] px-1.5">Admin</Badge>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground">{member.role}</p>
+                              {member.headline && (
+                                <p className="text-xs text-muted-foreground/70 mt-0.5">{member.headline}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => navigate("/messages")}
+                            >
+                              <MessageSquare className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 gap-1.5 text-xs"
+                              onClick={() => navigate(`/profile/${member.id}`)}
+                            >
+                              <UserPlus className="h-3.5 w-3.5" />
+                              Connect
+                            </Button>
+                          </div>
+                        </motion.div>
+                      ))}
+
+                    {members.filter((m) =>
+                      m.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
+                      m.role.toLowerCase().includes(memberSearch.toLowerCase())
+                    ).length === 0 && (
+                      <div className="text-center py-8">
+                        <Users className="h-8 w-8 mx-auto text-muted-foreground/30 mb-2" />
+                        <p className="text-sm text-muted-foreground">No members found</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </motion.div>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>

@@ -20,6 +20,7 @@ import {
   Clock,
   Check,
   X,
+  Rocket,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -267,9 +268,14 @@ export default function NetworkPage() {
                           ))}
                         </div>
                       </div>
-                      <Button variant="ghost" size="icon" className="shrink-0">
-                        <MessageSquare className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/messages`)}>
+                          <MessageSquare className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/collaborate/${conn.id}`)}>
+                          <Rocket className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                     <div className="mt-3 pt-3 border-t border-border/30 flex items-center justify-between text-xs text-muted-foreground">
                       <span>{conn.mutualConnections} mutual connections</span>

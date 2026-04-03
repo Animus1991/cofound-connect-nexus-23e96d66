@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { MobileHeader, MobileBottomNav } from "@/components/MobileNav";
 import ThemeToggle from "@/components/ThemeToggle";
 import GlobalSearch from "@/components/GlobalSearch";
+import ChatPopup from "@/components/ChatPopup";
+import FloatingChatBubble from "@/components/FloatingChatBubble";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { api } from "@/lib/api";
+import { useMessaging } from "@/stores/useMessaging";
 import {
   Rocket,
   Home,
@@ -39,6 +42,7 @@ const NAV_ITEMS = [
   { icon: Bookmark, label: "Saved", path: "/saved" },
   { icon: MessageSquare, label: "Messages", path: "/messages" },
   { icon: GraduationCap, label: "Mentors", path: "/mentors" },
+  { icon: Zap, label: "Mentorship", path: "/mentorship" },
   { icon: Users, label: "Communities", path: "/communities" },
   { icon: Briefcase, label: "Opportunities", path: "/opportunities" },
   { icon: Target, label: "Milestones", path: "/milestones" },
@@ -65,9 +69,14 @@ export default function AppLayout({ title, children, headerActions }: AppLayoutP
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
   const { tenant, isBrandingActive } = useTenant();
+  const { totalUnread: messageUnread } = useMessaging();
   const isDemo = user?.email === DEMO_EMAIL;
   const initials = getUserInitials(user?.name, user?.email);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  /* ── Chat popup state ── */
+  const [chatPopupOpen, setChatPopupOpen] = useState(false);
+  const [chatPopupMinimized, setChatPopupMinimized] = useState(false);
 
   /* ── Sidebar collapse state (persisted) ── */
   const [collapsed, setCollapsed] = useState<boolean>(() => {
@@ -297,6 +306,23 @@ export default function AppLayout({ title, children, headerActions }: AppLayoutP
                 variant="ghost"
                 size="icon"
                 className="relative h-8 w-8"
+                onClick={() => {
+                  setChatPopupOpen(true);
+                  setChatPopupMinimized(false);
+                }}
+                title="Messages"
+              >
+                <MessageSquare className="h-4 w-4" />
+                {messageUnread > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+                    {messageUnread > 9 ? "9+" : messageUnread}
+                  </span>
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative h-8 w-8"
                 onClick={() => navigate("/notifications")}
                 title="Notifications"
               >
@@ -320,6 +346,23 @@ export default function AppLayout({ title, children, headerActions }: AppLayoutP
       </main>
 
       <MobileBottomNav />
+
+      {/* Floating Chat Popup */}
+      <ChatPopup
+        isOpen={chatPopupOpen}
+        onClose={() => setChatPopupOpen(false)}
+        onMinimize={() => setChatPopupMinimized(!chatPopupMinimized)}
+        isMinimized={chatPopupMinimized}
+      />
+
+      {/* Floating Chat Bubble (visible when popup is closed) */}
+      <FloatingChatBubble
+        onClick={() => {
+          setChatPopupOpen(true);
+          setChatPopupMinimized(false);
+        }}
+        isPopupOpen={chatPopupOpen}
+      />
     </div>
   );
 }

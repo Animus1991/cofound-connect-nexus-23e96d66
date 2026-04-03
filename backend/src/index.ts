@@ -37,6 +37,7 @@ import tenantDomainsRoutes from "./routes/tenantDomains.js";
 import publicDomainsRoutes from "./routes/publicDomains.js";
 import automationRoutes from "./routes/automation.js";
 import matchingRoutes from "./routes/matching.js";
+import taxonomyRoutes from "./routes/taxonomy.js";
 
 const PORT = parseInt(process.env.PORT ?? "3001", 10);
 
@@ -112,6 +113,7 @@ app.route("/api/tenant-domains", tenantDomainsRoutes);
 app.route("/api/public/domains", publicDomainsRoutes);
 app.route("/api/automation", automationRoutes);
 app.route("/api/matching", matchingRoutes);
+app.route("/api/taxonomy", taxonomyRoutes);
 
 // ── 404 fallback ─────────────────────────────────────────────────────────────
 app.notFound((c) => c.json({ error: "Not found" }, 404));

@@ -12,8 +12,6 @@ import { isGlobalPlatformHost } from "@/lib/domainResolver";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Loader2 } from "lucide-react";
 
-const ChatWidget = lazy(() => import("@/components/ChatWidget"));
-
 // ── Lazy-loaded pages ───────────────────────────────────────
 // Group 1: Public/Auth pages (loaded together)
 const LandingPage = lazy(() => import("./pages/LandingPage"));
@@ -51,6 +49,8 @@ const SavedProfilesPage = lazy(() => import("./pages/SavedProfilesPage"));
 const OpportunitiesPage = lazy(() => import("./pages/OpportunitiesPage"));
 const MentorsPage = lazy(() => import("./pages/MentorsPage"));
 const MentorDetailPage = lazy(() => import("./pages/MentorDetailPage"));
+const MentorshipTrackingPage = lazy(() => import("./pages/MentorshipTrackingPage"));
+const CollaborationStarterPage = lazy(() => import("./pages/CollaborationStarterPage"));
 const CommunitiesPage = lazy(() => import("./pages/CommunitiesPage"));
 const CommunityDetailPage = lazy(() => import("./pages/CommunityDetailPage"));
 const PostDetailPage = lazy(() => import("./pages/PostDetailPage"));
@@ -63,6 +63,12 @@ const BillingPage = lazy(() => import("./pages/BillingPage"));
 const OrganizationsPage = lazy(() => import("./pages/OrganizationsPage"));
 const OrganizationDetailPage = lazy(() => import("./pages/OrganizationDetailPage"));
 const AdminDashboardPage = lazy(() => import("./pages/AdminDashboardPage"));
+
+// Group 6: Profile management pages
+const SkillsPage = lazy(() => import("./pages/SkillsPage"));
+const WorkStylePage = lazy(() => import("./pages/WorkStylePage"));
+const MatchPreferencesPage = lazy(() => import("./pages/MatchPreferencesPage"));
+const RequestsPage = lazy(() => import("./pages/RequestsPage"));
 
 function PageLoader() {
   return (
@@ -146,6 +152,8 @@ function AppRoutes() {
         <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
         <Route path="/mentors" element={<ProtectedRoute><MentorsPage /></ProtectedRoute>} />
         <Route path="/mentors/:id" element={<ProtectedRoute><MentorDetailPage /></ProtectedRoute>} />
+        <Route path="/mentorship" element={<ProtectedRoute><MentorshipTrackingPage /></ProtectedRoute>} />
+        <Route path="/collaborate/:userId" element={<ProtectedRoute><CollaborationStarterPage /></ProtectedRoute>} />
         <Route path="/communities" element={<ProtectedRoute><CommunitiesPage /></ProtectedRoute>} />
         <Route path="/communities/:id" element={<ProtectedRoute><CommunityDetailPage /></ProtectedRoute>} />
         <Route path="/communities/:id/posts/:postId" element={<ProtectedRoute><PostDetailPage /></ProtectedRoute>} />
@@ -159,6 +167,10 @@ function AppRoutes() {
         <Route path="/organizations/:id" element={<ProtectedRoute><OrganizationDetailPage /></ProtectedRoute>} />
         <Route path="/saved" element={<ProtectedRoute><SavedProfilesPage /></ProtectedRoute>} />
         <Route path="/billing" element={<ProtectedRoute><BillingPage /></ProtectedRoute>} />
+        <Route path="/skills" element={<ProtectedRoute><SkillsPage /></ProtectedRoute>} />
+        <Route path="/work-style" element={<ProtectedRoute><WorkStylePage /></ProtectedRoute>} />
+        <Route path="/match-preferences" element={<ProtectedRoute><MatchPreferencesPage /></ProtectedRoute>} />
+        <Route path="/requests" element={<ProtectedRoute><RequestsPage /></ProtectedRoute>} />
         
         <Route path="*" element={<NotFound />} />
       </Routes>
@@ -177,9 +189,6 @@ const App = () => (
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <DomainBootstrap>
               <AppRoutes />
-              <Suspense fallback={null}>
-                <ChatWidget />
-              </Suspense>
             </DomainBootstrap>
           </BrowserRouter>
         </TooltipProvider>
